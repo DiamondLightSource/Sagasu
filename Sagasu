@@ -18,6 +18,18 @@ path = os.getcwd()
 print("You are here: " + path)
 print("")
 
+print("""
+      
+.------..------..------..------..------..------.
+|S.--. ||A.--. ||G.--. ||A.--. ||S.--. ||U.--. |
+| :/\: || (\/) || :/\: || (\/) || :/\: || (\/) |
+| :\/: || :\/: || :\/: || :\/: || :\/: || :\/: |
+| '--'S|| '--'A|| '--'G|| '--'A|| '--'S|| '--'U|
+`------'`------'`------'`------'`------'`------'
+                                      C.ORR 2020
+      
+      """)
+
 #user inputs
 lowres = int((1 + (10 * float(input("Low resolution cutoff for grid: ")))))
 l2 = (lowres - 1) / 10
@@ -33,11 +45,13 @@ ntry = int(input("Number of trials: "))
 hklin = os.path.join(fa_path, projname+"_fa.hkl")
 insin = os.path.join(fa_path, projname+"_fa.ins")
 
-print("You have chosed the project name "+projname+" in location "+fa_path)
+print("You have chosen the project name "+projname+" in location "+fa_path)
+print("")
 if clust == 'l':
     print("This will run the grid search on this machine between "+str(l2)+"A and "+str(h2)+"A. The site range is between "+str(lowsites)+" and "+str(highsites)+". As you are running on a local machine, this search may take quite a long time")
 if clust == 'c':       
     print("This will run the grid search on the Diamond cluster between "+str(l2)+"A and "+str(h2)+"A. The site range is between "+str(lowsites)+" and "+str(highsites)+". Please open another terminal to check on the queue status - 'qstat'")
+print("")
 pro = input("Press enter to continue.")
 
 #write shelx job file
