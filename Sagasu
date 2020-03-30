@@ -15,7 +15,7 @@ from os import remove
 os.system("module load mx")
 os.system("module load global/cluster")
 path = os.getcwd()
-print("You are here: " + path)
+print("You are here: "+path)
 print("")
 
 print("""
