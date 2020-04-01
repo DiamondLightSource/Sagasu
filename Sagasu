@@ -91,6 +91,7 @@ for i in range(highres, lowres):
         replace(f, "FIND", "FIND "+str(j)+"\n")
         replace(f, "SHEL", "SHEL 999 "+str(i2)+"\n")
         replace(f, "NTRY", "NTRY "+str(ntry)+"\n")
+        f.close()
         if clust == 'l':
             print("""
             Running on local machine, this may take some time...
