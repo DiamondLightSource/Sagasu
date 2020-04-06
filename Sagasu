@@ -9,9 +9,8 @@ Created on Fri Mar 13 14:48:45 2020
 #imports
 #import time
 import os
-from shutil import move
-from tempfile import mkstemp
-from os import remove
+import re
+#os.system("ulimit -n 4000") #temp fix for errno24
 os.system("module load mx")
 os.system("module load global/cluster")
 path = os.getcwd()
@@ -37,8 +36,8 @@ highres = int((10 * float(input("High resolution cutoff for grid: "))))
 h2 = highres / 10
 lowsites = int(input("Minimum number of sites to search: "))
 highsites = int(input("Maximum number of sites to search: "))
-projname = ("wg99") #input("Name of project (SHELX prefix): ")
-fa_path = ("/dls/i23/data/2020/nr23571-55/processing/wg99/xscale_9") #input("Path to SHELXC outputs: ")
+projname = input("Name of project (SHELX prefix): ")
+fa_path = input("Path to SHELXC outputs: ")
 clust = (str(input("Run on (c)luster or (l)ocal machine? ")))
 clust = clust.lower()
 ntry = int(input("Number of trials: "))
@@ -61,27 +60,73 @@ shelxjob.write("shelxd "+projname+"_fa")
 shelxjob.close()
 os.chmod('shelxd_job.sh', 0o775)
 
-#replacement function
-def replace(file_path, pattern, subst):
-    file_path = os.path.abspath(file_path)
-    fh, abs_path = mkstemp()
-    new_file = open(abs_path,'w')
-    old_file = open(file_path)
-    for line in old_file:
-        new_file.write(subst if pattern in line else line)
-    new_file.close()
-    old_file.close()
-    remove(file_path)
-    move(abs_path, file_path)
-
+#replacement function (OLD)
+# =============================================================================
+# def replace(file_path, pattern, subst):
+#     file_path = os.path.abspath(file_path)
+#     fh, abs_path = mkstemp()
+#     new_file = open(abs_path,'w')
+#     old_file = open(file_path)
+#     for line in old_file:
+#         new_file.write(subst if pattern in line else line)
+#     new_file.close()
+#     old_file.close()
+#     remove(file_path)
+#     move(abs_path, file_path)
+# =============================================================================
+    
+ # Read contents from file as a single string
+def replace(file, pattern, subst):
+    file_handle = open(file, 'r')
+    file_string = file_handle.read()
+    file_handle.close()
+    # Use RE package to allow for replacement (also allowing for (multiline) REGEX)
+    file_string = (re.sub(pattern, subst, file_string))
+    # Write contents to file.
+    # Using mode 'w' truncates the file.
+    file_handle = open(file, 'w')
+    file_handle.write(file_string)
+    file_handle.close()
+    
 ################ PROCESSING ################
 
+#THIS IS THE OLD CRAP WAY OF DOING IT BUT MAY BE USEFUL ONE DAY (nb both work...)
 #create subdirs,
+# =============================================================================
+# os.system("mkdir "+path+"/"+projname)
+# for i in range(highres, lowres):
+#     os.system("mkdir "+projname+"/"+str(i))
+#     i2 = (i/10)
+#     for j in range(lowsites, highsites):
+#         os.system("mkdir "+projname+"/"+str(i)+"/"+str(j))
+#         os.system("cp "+insin+" ./"+projname+"/"+str(i)+"/"+str(j))
+#         os.system("cp "+hklin+" ./"+projname+"/"+str(i)+"/"+str(j))
+#         os.system("cp shelxd_job.sh "+" ./"+projname+"/"+str(i)+"/"+str(j))
+#         workpath = os.path.join(path, projname+"/"+str(i)+"/"+str(j))
+#         f = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.ins")
+#         replace(f, "FIND", "FIND "+str(j)+"\n")
+#         replace(f, "SHEL", "SHEL 999 "+str(i2)+"\n")
+#         replace(f, "NTRY", "NTRY "+str(ntry)+"\n") 
+#         if clust == 'l':
+#             print("""
+#             Running on local machine, this may take some time...
+#                   """)
+#             os.system("cd "+workpath+"; ./shelxd_job.sh")
+#         elif clust == 'c':
+#             print("""
+#             Submitting to the cluster, please run 'watch qstat' in another terminal to check on progress
+#                   """)
+#             os.system("cd "+workpath+"; qsub -P i23 -q low.q -l h_vmem=8G -pe smp 20 -cwd ./shelxd_job.sh")
+# =============================================================================
+
 os.system("mkdir "+path+"/"+projname)
-for i in range(highres, lowres):
+
+i = highres
+while not (i >= lowres):
     os.system("mkdir "+projname+"/"+str(i))
     i2 = (i/10)
-    for j in range(lowsites, highsites):
+    j = highsites
+    while not (j <= lowsites):
         os.system("mkdir "+projname+"/"+str(i)+"/"+str(j))
         os.system("cp "+insin+" ./"+projname+"/"+str(i)+"/"+str(j))
         os.system("cp "+hklin+" ./"+projname+"/"+str(i)+"/"+str(j))
@@ -91,7 +136,6 @@ for i in range(highres, lowres):
         replace(f, "FIND", "FIND "+str(j)+"\n")
         replace(f, "SHEL", "SHEL 999 "+str(i2)+"\n")
         replace(f, "NTRY", "NTRY "+str(ntry)+"\n")
-        f.close()
         if clust == 'l':
             print("""
             Running on local machine, this may take some time...
@@ -102,7 +146,12 @@ for i in range(highres, lowres):
             Submitting to the cluster, please run 'watch qstat' in another terminal to check on progress
                   """)
             os.system("cd "+workpath+"; qsub -P i23 -q low.q -l h_vmem=8G -pe smp 20 -cwd ./shelxd_job.sh")
-    
+        else:
+            print("error in input...")
+        j = j - 1
+    i = i + 1
+            
+
 print("""
       
 Done. If nothing happened, make sure you pressed l or c at the cluster question.
