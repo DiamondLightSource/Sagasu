@@ -145,58 +145,56 @@ def outliers(filename, resolution, sitessearched):
     
 ################ PROCESSING ################
 
-# =============================================================================
-# os.system("mkdir "+path+"/"+projname)
-# i = highres
-# while not (i >= lowres):
-#     os.system("mkdir "+projname+"/"+str(i))
-#     i2 = (i/10)
-#     j = highsites
-#     while not (j <= (lowsites -1)):
-#         os.system("mkdir "+projname+"/"+str(i)+"/"+str(j))
-#         os.system("cp "+insin+" ./"+projname+"/"+str(i)+"/"+str(j))
-#         os.system("cp "+hklin+" ./"+projname+"/"+str(i)+"/"+str(j))
-#         os.system("cp shelxd_job.sh "+" ./"+projname+"/"+str(i)+"/"+str(j))
-#         workpath = os.path.join(path, projname+"/"+str(i)+"/"+str(j))
-#         f = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.ins")
-#         replace(f, "FIND", "FIND "+str(j)+"\n")
-#         replace(f, "SHEL", "SHEL 999 "+str(i2)+"\n")
-#         replace(f, "NTRY", "NTRY "+str(ntry)+"\n")
-#         if clust == 'l':
-#             print("""
-#             Running on local machine, this may take some time...
-#                   """)
-#             os.system("cd "+workpath+"; ./shelxd_job.sh")
-#         elif clust == 'c':
-#             print("""
-#             Submitting to the cluster, please run 'watch qstat' in another terminal to check on progress
-#                   """)
-#             os.system("cd "+workpath+"; qsub -P i23 -q low.q -l h_vmem=8G -pe smp 20 -cwd ./shelxd_job.sh")
-#         else:
-#             print("error in input...")
-#         j = j - 1
-#     i = i + 1
-#             
-# 
-# print("""
-#       
-# Done. If nothing happened, make sure you pressed l or c at the cluster question.
-#       
-#       """)
-# 
-# ################ ANALYSIS ################
-# 
-# if clust == 'c':
-#     print("""
-#           
-# !!!IMPORTANT!!! -  Please wait until ALL submitted cluster jobs have FINISHED before answering the following question.
-#     
-# You can check by running 'qstat' in a new terminal.
-#     
-#     """)
-#     cont = (str(input("Have ALL cluster jobs FINISHED? (y/n): ")))
-#     cont = cont.lower()
-# =============================================================================
+os.system("mkdir "+path+"/"+projname)
+i = highres
+while not (i >= lowres):
+    os.system("mkdir "+projname+"/"+str(i))
+    i2 = (i/10)
+    j = highsites
+    while not (j <= (lowsites -1)):
+        os.system("mkdir "+projname+"/"+str(i)+"/"+str(j))
+        os.system("cp "+insin+" ./"+projname+"/"+str(i)+"/"+str(j))
+        os.system("cp "+hklin+" ./"+projname+"/"+str(i)+"/"+str(j))
+        os.system("cp shelxd_job.sh "+" ./"+projname+"/"+str(i)+"/"+str(j))
+        workpath = os.path.join(path, projname+"/"+str(i)+"/"+str(j))
+        f = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.ins")
+        replace(f, "FIND", "FIND "+str(j)+"\n")
+        replace(f, "SHEL", "SHEL 999 "+str(i2)+"\n")
+        replace(f, "NTRY", "NTRY "+str(ntry)+"\n")
+        if clust == 'l':
+            print("""
+            Running on local machine, this may take some time...
+                  """)
+            os.system("cd "+workpath+"; ./shelxd_job.sh")
+        elif clust == 'c':
+            print("""
+            Submitting to the cluster, please run 'watch qstat' in another terminal to check on progress
+                  """)
+            os.system("cd "+workpath+"; qsub -P i23 -q low.q -l h_vmem=8G -pe smp 20 -cwd ./shelxd_job.sh")
+        else:
+            print("error in input...")
+        j = j - 1
+    i = i + 1
+            
+
+print("""
+      
+Done. If nothing happened, make sure you pressed l or c at the cluster question.
+      
+      """)
+
+################ ANALYSIS ################
+
+if clust == 'c':
+    print("""
+          
+!!!IMPORTANT!!! -  Please wait until ALL submitted cluster jobs have FINISHED before answering the following question.
+    
+You can check by running 'qstat' in a new terminal.
+    
+    """)
+    cont = (str(input("Have ALL cluster jobs FINISHED? (y/n): ")))
+    cont = cont.lower()
     
 os.system("mkdir "+projname+"_results")
 i = highres
