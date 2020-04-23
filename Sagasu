@@ -24,13 +24,14 @@ print("You are here: "+path)
 print("")
 
 print("""
-      
-.------..------..------..------..------..------.
-|S.--. ||A.--. ||G.--. ||A.--. ||S.--. ||U.--. |
-| :/\: || (\/) || :/\: || (\/) || :/\: || (\/) |
-| :\/: || :\/: || :\/: || :\/: || :\/: || :\/: |
-| '--'S|| '--'A|| '--'G|| '--'A|| '--'S|| '--'U|
-`------'`------'`------'`------'`------'`------'
+探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す
+探す .------..------..------..------..------..------. 探す
+探す |S.--. ||A.--. ||G.--. ||A.--. ||S.--. ||U.--. | 探す
+探す | :/\: || (\/) || :/\: || (\/) || :/\: || (\/) | 探す
+探す | :\/: || :\/: || :\/: || :\/: || :\/: || :\/: | 探す
+探す | '--'S|| '--'A|| '--'G|| '--'A|| '--'S|| '--'U| 探す
+探す `------'`------'`------'`------'`------'`------' 探す
+探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す
                                       C.ORR 2020
       
       """)
@@ -105,9 +106,7 @@ def results(filename):
 
 def analysis(filename, nums):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 'CCALL', 'CCWEAK', 'CFOM', 'BEST', 'PATFOM'])
-    print(df)
     ccallweak = df[['CCALL', 'CCALL']]
-    print(ccallweak)
     #clust = OPTICS().fit(ccallweak)
     clust = DBSCAN(eps=0.8, min_samples=1).fit(ccallweak)
     #clust = AffinityPropagation(damping=0.8).fit(ccallweak)
@@ -117,7 +116,6 @@ def analysis(filename, nums):
     plt.draw()
     ccallvsccweak = plt.gcf()
     ccallvsccweak.savefig(path+"/"+projname+"_figures/"+nums+".png", dpi=150)
-    plt.show()
 
 def outliers(filename, resolution, sitessearched):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 'CCALL', 'CCWEAK', 'CFOM', 'BEST', 'PATFOM'])
