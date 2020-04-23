@@ -33,7 +33,7 @@ for line in inputFile.readlines():
         test = bla2.replace(',', ' ')
         column = test.split() 
 	if column:
-		if column[0] == 'Try':
+        if column[0] == 'Try':
 			CCall.append(float(column[7]))
 			CCweak.append(float(column[8]))
 			CFOM.append(float(column[10]))
