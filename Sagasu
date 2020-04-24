@@ -33,7 +33,17 @@ print("""
 探す `------'`------'`------'`------'`------'`------' 探す
 探す探す探す探す探す探す探す探す探す探す探す探す探す探す探
                                       C.ORR 2020
-      
+
+
+You will need to have run shelxc beforehand. This can be done via hkl2map.
+
+The project name must be exactly the prefix using in hkl2map
+eg. for 'proteinA_fa.hkl' use 'proteinA'
+
+The path must be FULL with no / at the end
+eg '/dls/here/is/wherethedata/is'
+
+Results will be printed in this console. Graphs will be saved in ./projectname_results/
       """)
 
 #user inputs
@@ -108,17 +118,17 @@ def analysis(filename, nums):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 'CCALL', 'CCWEAK', 'CFOM', 'BEST', 'PATFOM'])
     ccallweak = df[['CCALL', 'CCALL']]
     #clust = OPTICS(min_samples=5, max_eps=3, algorithm='brute', n_jobs=-1).fit(ccallweak)
-    clust = DBSCAN(eps=0.7, min_samples=1, algorithm='ball_tree', n_jobs=-1).fit(ccallweak)
+    clustr = DBSCAN(eps=0.7, min_samples=1, algorithm='ball_tree', n_jobs=-1).fit(ccallweak)
     #clust = AffinityPropagation(damping=0.8).fit(ccallweak)
     #clust = AgglomerativeClustering(n_clusters=2).fit(ccallweak)
     #clust = SpectralClustering(n_clusters=8).fit(ccallweak)
-    labels = len(set(clust.labels_))
+    labels = len(set(clustr.labels_))
     print("There are "+str(labels)+" cluster(s)")
-    plt.scatter(df['CCALL'], df['CCWEAK'], c= clust.labels_.astype(float), s=50, alpha=0.5)
+    plt.scatter(df['CCALL'], df['CCWEAK'], c= clustr.labels_.astype(float), s=50, alpha=0.5)
     plt.draw()
     ccallvsccweak = plt.gcf()
     ccallvsccweak.savefig(path+"/"+projname+"_figures/"+nums+".png", dpi=150)
-    plt.show()
+    #plt.show()
 
 def outliers(filename, resolution, sitessearched):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 'CCALL', 'CCWEAK', 'CFOM', 'BEST', 'PATFOM'])
@@ -181,7 +191,8 @@ while not (i >= lowres):
 print("""
       
 Done. If nothing happened, make sure you pressed l or c at the cluster question.
-      
+
+Now preparing the files for analysis. If you ran a lot of trys, this may take some time...      
       """)
 
 ################ ANALYSIS ################
