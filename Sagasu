@@ -12,7 +12,7 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.cluster import AffinityPropagation, OPTICS, DBSCAN
+from sklearn.cluster import AffinityPropagation, OPTICS, DBSCAN, AgglomerativeClustering, SpectralClustering
 import heapq
 
 
@@ -24,14 +24,14 @@ print("You are here: "+path)
 print("")
 
 print("""
-探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す
+探す探す探す探す探す探す探す探す探す探す探す探す探す探す探
 探す .------..------..------..------..------..------. 探す
 探す |S.--. ||A.--. ||G.--. ||A.--. ||S.--. ||U.--. | 探す
 探す | :/\: || (\/) || :/\: || (\/) || :/\: || (\/) | 探す
 探す | :\/: || :\/: || :\/: || :\/: || :\/: || :\/: | 探す
 探す | '--'S|| '--'A|| '--'G|| '--'A|| '--'S|| '--'U| 探す
 探す `------'`------'`------'`------'`------'`------' 探す
-探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す探す
+探す探す探す探す探す探す探す探す探す探す探す探す探す探す探
                                       C.ORR 2020
       
       """)
@@ -107,15 +107,18 @@ def results(filename):
 def analysis(filename, nums):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 'CCALL', 'CCWEAK', 'CFOM', 'BEST', 'PATFOM'])
     ccallweak = df[['CCALL', 'CCALL']]
-    #clust = OPTICS().fit(ccallweak)
-    clust = DBSCAN(eps=0.8, min_samples=1).fit(ccallweak)
+    #clust = OPTICS(min_samples=5, max_eps=3, algorithm='brute', n_jobs=-1).fit(ccallweak)
+    clust = DBSCAN(eps=0.7, min_samples=1, algorithm='ball_tree', n_jobs=-1).fit(ccallweak)
     #clust = AffinityPropagation(damping=0.8).fit(ccallweak)
+    #clust = AgglomerativeClustering(n_clusters=2).fit(ccallweak)
+    #clust = SpectralClustering(n_clusters=8).fit(ccallweak)
     labels = len(set(clust.labels_))
-    print(labels)
+    print("There are "+str(labels)+" cluster(s)")
     plt.scatter(df['CCALL'], df['CCWEAK'], c= clust.labels_.astype(float), s=50, alpha=0.5)
     plt.draw()
     ccallvsccweak = plt.gcf()
     ccallvsccweak.savefig(path+"/"+projname+"_figures/"+nums+".png", dpi=150)
+    plt.show()
 
 def outliers(filename, resolution, sitessearched):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 'CCALL', 'CCWEAK', 'CFOM', 'BEST', 'PATFOM'])
@@ -168,7 +171,7 @@ while not (i >= lowres):
             print("""
             Submitting to the cluster, please run 'watch qstat' in another terminal to check on progress
                   """)
-            os.system("cd "+workpath+"; qsub -P i23 -q low.q -l h_vmem=8G -pe smp 20 -cwd ./shelxd_job.sh")
+            os.system("cd "+workpath+"; qsub -P i23 -q low.q -l h_vmem=4G -N sagasu_"+str(i)+"_"+str(j)+" -pe smp 40-10 -cwd ./shelxd_job.sh")
         else:
             print("error in input...")
         j = j - 1
