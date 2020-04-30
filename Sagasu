@@ -7,14 +7,12 @@ Created on Fri Mar 13 14:48:45 2020
 ################ SETUP ################
 
 #imports
-import os
-import re
+import os, re
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import DBSCAN
 import heapq
-
 
 plot_kwds = {'alpha' : 0.25, 's' : 80, 'linewidths':0}
 os.system("module load mx")
@@ -43,40 +41,51 @@ eg. for 'proteinA_fa.hkl' use 'proteinA'
 The path must be FULL with no / at the end
 eg '/dls/here/is/wherethedata/is'
 
-If you only want tor un analysis, run from the same place you ran processing but leave the questions on project path and cluster blank.
+If you only want to run analysis, run from the same place you ran processing but leave the questions on project path and cluster blank.
 Make sure all of the other inputs are kept the same.
 
 Results will be printed in this console. Graphs will be saved in ./projectname_results/
+
+
       """)
 
 #user inputs
+pro_or_ana = (input("Would you like to run processing followed by analysis (p) or just analysis (a)? ")).lower()
+print("")
+print("***Setup***")
+projname = input("Name of project (SHELX prefix): ") 
+if pro_or_ana == 'p': 
+    fa_path = input("Path to SHELXC outputs: ")
 lowres = int((1 + (10 * float(input("Low resolution cutoff for grid: ")))))
 l2 = (lowres - 1) / 10
 highres = int((10 * float(input("High resolution cutoff for grid: "))))
 h2 = highres / 10
 lowsites = int(input("Minimum number of sites to search: "))
 highsites = int(input("Maximum number of sites to search: "))
-projname = input("Name of project (SHELX prefix): ")
-fa_path = input("Path to SHELXC outputs: ")
-clust = (str(input("Run on (c)luster or (l)ocal machine? ")))
-clust = clust.lower()
-ntry = int(input("Number of trials: "))
-hklin = os.path.join(fa_path, projname+"_fa.hkl")
-insin = os.path.join(fa_path, projname+"_fa.ins")
-totalrun = (((lowres - 1) - highres)) * (highsites - lowsites)
-trytot = (totalrun * ntry)
-clusteranalysis = (str(input("Do you want to run cluster analysis in addition to outlier analysis (time consuming)? (y/n) ")))
-clusteranalysis = clusteranalysis.lower()
-
-print("You have chosen the project name "+projname+" in location "+fa_path)
-print("")
-if clust == 'l':
-    print("This will run the grid search on this machine between "+str(l2)+"A and "+str(h2)+"A. The site range is between "+str(lowsites)+" and "+str(highsites)+". As you are running on a local machine, this search may take quite a long time")
-if clust == 'c':       
-    print("This will run the grid search on the Diamond cluster between "+str(l2)+"A and "+str(h2)+"A. The site range is between "+str(lowsites)+" and "+str(highsites)+". Please open another terminal to check on the queue status - 'qstat'")
-print("")
-print("Number of shelxd runs: "+str(totalrun))
-print("Grand total number of trys: "+str(trytot))
+if pro_or_ana == 'p':
+    clust = (str(input("Run on (c)luster or (l)ocal machine? "))).lower()
+if pro_or_ana == 'p':    
+    ntry = int(input("Number of trials: "))
+else:
+    ntry = 1
+if pro_or_ana == 'p':    
+    hklin = os.path.join(fa_path, projname+"_fa.hkl")
+    insin = os.path.join(fa_path, projname+"_fa.ins")
+    totalrun = (((lowres - 1) - highres)) * (highsites - lowsites)
+    trytot = (totalrun * ntry)   
+clusteranalysis = (str(input("Do you want to run cluster analysis in addition to outlier analysis (time consuming)? (y/n) "))).lower()
+if pro_or_ana == 'p':
+    print("You have chosen the project name "+projname+" in location "+fa_path)
+    print("")
+    if clust == 'l':
+        print("This will run the grid search on this machine between "+str(l2)+"A and "+str(h2)+"A. The site range is between "+str(lowsites)+" and "+str(highsites)+". As you are running on a local machine, this search may take quite a long time")
+    if clust == 'c':       
+        print("This will run the grid search on the Diamond cluster between "+str(l2)+"A and "+str(h2)+"A. The site range is between "+str(lowsites)+" and "+str(highsites)+". Please open another terminal to check on the queue status - 'qstat'")
+    print("")
+    print("Number of shelxd runs: "+str(totalrun))
+    print("Grand total number of trys: "+str(trytot))
+else:
+    print("Running in analysis only mode")
 pro = input("Press enter to continue.")
 
 #write shelx job file
@@ -122,11 +131,7 @@ def results(filename):
 def analysis(filename, nums):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 'CCALL', 'CCWEAK', 'CFOM', 'BEST', 'PATFOM'])
     ccallweak = df[['CCALL', 'CCALL']]
-    #clust = OPTICS(min_samples=5, max_eps=3, algorithm='brute', n_jobs=-1).fit(ccallweak)
     clustr = DBSCAN(eps=0.7, min_samples=1, n_jobs=-1).fit(ccallweak)
-    #clust = AffinityPropagation(damping=0.8).fit(ccallweak)
-    #clust = AgglomerativeClustering(n_clusters=2).fit(ccallweak)
-    #clust = SpectralClustering(n_clusters=8).fit(ccallweak)
     labels = len(set(clustr.labels_))
     print("There are "+str(labels)+" cluster(s)")
     plt.scatter(df['CCALL'], df['CCWEAK'], c= clustr.labels_.astype(float), s=50, alpha=0.5)
@@ -157,63 +162,67 @@ def outliers(filename, resolution, sitessearched):
     print("number of CCall with CCall - median >  5 * MAD = "+str(mad5))
     print("Three largest CCall values: "+str(ccallmax))
     print("")
-    
+    allmad = open("mad.csv", 'a') 
+    allmad.write(str(int(resolution) / 10)+","+str(sitessearched)+","+str(mad5)+","+str(mad6)+","+str(mad7)+","+str(mad8)+","+str(mad9)+","+str(mad10)+"\n")
+    allmad.close()
     
 ################ PROCESSING ################
-
-os.system("mkdir "+path+"/"+projname)
-i = highres
-while not (i >= lowres):
-    os.system("mkdir "+projname+"/"+str(i))
-    i2 = (i/10)
-    j = highsites
-    while not (j <= (lowsites -1)):
-        os.system("mkdir "+projname+"/"+str(i)+"/"+str(j))
-        os.system("cp "+insin+" ./"+projname+"/"+str(i)+"/"+str(j))
-        os.system("cp "+hklin+" ./"+projname+"/"+str(i)+"/"+str(j))
-        os.system("cp shelxd_job.sh "+" ./"+projname+"/"+str(i)+"/"+str(j))
-        workpath = os.path.join(path, projname+"/"+str(i)+"/"+str(j))
-        f = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.ins")
-        replace(f, "FIND", "FIND "+str(j)+"\n")
-        replace(f, "SHEL", "SHEL 999 "+str(i2)+"\n")
-        replace(f, "NTRY", "NTRY "+str(ntry)+"\n")
-        if clust == 'l':
-            print("""
-            Running on local machine, this may take some time...
-                  """)
-            os.system("cd "+workpath+"; ./shelxd_job.sh")
-        elif clust == 'c':
-            print("""
-            Submitting to the cluster, please run 'watch qstat' in another terminal to check on progress
-                  """)
-            os.system("cd "+workpath+"; qsub -P i23 -q low.q -l h_vmem=4G -N sagasu_"+str(i)+"_"+str(j)+" -pe smp 40-10 -cwd ./shelxd_job.sh")
-        else:
-            print("error in input...")
-        j = j - 1
-    i = i + 1
-            
-
-print("""
-      
-Done. If nothing happened, make sure you pressed l or c at the cluster question.
-
-Now preparing the files for analysis. If you ran a lot of trys, this may take some time...      
-      """)
-
-################ ANALYSIS ################
-
-if clust == 'c':
+if pro_or_ana == 'p': 
+    if not os.path.exists(projname):
+        os.system("mkdir "+projname)
+    i = highres
+    while not (i >= lowres):
+        os.system("mkdir "+projname+"/"+str(i))
+        i2 = (i/10)
+        j = highsites
+        while not (j <= (lowsites -1)):
+            os.system("mkdir "+projname+"/"+str(i)+"/"+str(j))
+            os.system("cp "+insin+" ./"+projname+"/"+str(i)+"/"+str(j))
+            os.system("cp "+hklin+" ./"+projname+"/"+str(i)+"/"+str(j))
+            os.system("cp shelxd_job.sh "+" ./"+projname+"/"+str(i)+"/"+str(j))
+            workpath = os.path.join(path, projname+"/"+str(i)+"/"+str(j))
+            f = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.ins")
+            replace(f, "FIND", "FIND "+str(j)+"\n")
+            replace(f, "SHEL", "SHEL 999 "+str(i2)+"\n")
+            replace(f, "NTRY", "NTRY "+str(ntry)+"\n")
+            if clust == 'l':
+                print("""
+                Running on local machine, this may take some time...
+                      """)
+                os.system("cd "+workpath+"; ./shelxd_job.sh")
+            elif clust == 'c':
+                print("""
+                Submitting to the cluster, please run 'watch qstat' in another terminal to check on progress
+                      """)
+                os.system("cd "+workpath+"; qsub -P i23 -q low.q -l h_vmem=4G -N sagasu_"+str(i)+"_"+str(j)+" -pe smp 40-10 -cwd ./shelxd_job.sh")
+            else:
+                print("error in input...")
+            j = j - 1
+        i = i + 1
+                
+    
     print("""
           
-!!!IMPORTANT!!! -  Please wait until ALL submitted cluster jobs have FINISHED before answering the following question.
+    Done. If nothing happened, make sure you pressed l or c at the cluster question.
     
-You can check by running 'qstat' in a new terminal.
-    
-    """)
-    cont = (str(input("Have ALL cluster jobs FINISHED? (y/n): ")))
-    cont = cont.lower()
-    
-os.system("mkdir "+projname+"_results")
+    Now preparing the files for analysis. If you ran a lot of trys, this may take some time...      
+          """)
+
+################ ANALYSIS ################
+if pro_or_ana == 'p': 
+    if clust == 'c':
+        print("""
+              
+    !!!IMPORTANT!!! -  Please wait until ALL submitted cluster jobs have FINISHED before answering the following question.
+        
+    You can check by running 'qstat' in a new terminal.
+        
+        """)
+        cont = (str(input("Have ALL cluster jobs FINISHED? (y/n): ")))
+        cont = cont.lower()
+
+if not os.path.exists(projname+"_results"):
+    os.system("mkdir "+projname+"_results")
 i = highres
 while not (i >= lowres):
     i2 = (i/10)
@@ -224,7 +233,8 @@ while not (i >= lowres):
         j = j - 1
     i = i + 1 
 
-os.system("mkdir "+projname+"_figures")
+if not os.path.exists(projname+"_figures"):
+    os.system("mkdir "+projname+"_figures")
 i = highres
 while not (i >= lowres):
     i2 = (i/10)
