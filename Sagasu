@@ -12,7 +12,7 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.cluster import AffinityPropagation, OPTICS, DBSCAN, AgglomerativeClustering, SpectralClustering
+from sklearn.cluster import DBSCAN
 import heapq
 
 
@@ -43,6 +43,9 @@ eg. for 'proteinA_fa.hkl' use 'proteinA'
 The path must be FULL with no / at the end
 eg '/dls/here/is/wherethedata/is'
 
+If you only want tor un analysis, run from the same place you ran processing but leave the questions on project path and cluster blank.
+Make sure all of the other inputs are kept the same.
+
 Results will be printed in this console. Graphs will be saved in ./projectname_results/
       """)
 
@@ -62,6 +65,8 @@ hklin = os.path.join(fa_path, projname+"_fa.hkl")
 insin = os.path.join(fa_path, projname+"_fa.ins")
 totalrun = (((lowres - 1) - highres)) * (highsites - lowsites)
 trytot = (totalrun * ntry)
+clusteranalysis = (str(input("Do you want to run cluster analysis in addition to outlier analysis (time consuming)? (y/n) ")))
+clusteranalysis = clusteranalysis.lower()
 
 print("You have chosen the project name "+projname+" in location "+fa_path)
 print("")
@@ -118,7 +123,7 @@ def analysis(filename, nums):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 'CCALL', 'CCWEAK', 'CFOM', 'BEST', 'PATFOM'])
     ccallweak = df[['CCALL', 'CCALL']]
     #clust = OPTICS(min_samples=5, max_eps=3, algorithm='brute', n_jobs=-1).fit(ccallweak)
-    clustr = DBSCAN(eps=0.7, min_samples=1, algorithm='ball_tree', n_jobs=-1).fit(ccallweak)
+    clustr = DBSCAN(eps=0.7, min_samples=1, n_jobs=-1).fit(ccallweak)
     #clust = AffinityPropagation(damping=0.8).fit(ccallweak)
     #clust = AgglomerativeClustering(n_clusters=2).fit(ccallweak)
     #clust = SpectralClustering(n_clusters=8).fit(ccallweak)
@@ -227,7 +232,10 @@ while not (i >= lowres):
     while not (j <= (lowsites - 1)):
         csvfile = os.path.join(path, projname+"_results/"+str(i)+"_"+str(j)+".csv")
         numbers = str(i)+"_"+str(j)
-        analysis(csvfile, numbers)
+        if clusteranalysis == 'y':
+            analysis(csvfile, numbers)
+        else:
+            print("No cluster analysis requested")
         outliers(csvfile, i, j)
         j = j - 1
     i = i + 1 

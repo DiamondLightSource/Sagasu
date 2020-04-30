@@ -1,2 +1,9 @@
 
 shelxd_job.sh
+mad.sh
+shelxd.sh
+outliers.sh
+analysis.py
+shelxd_job.sh
+*.png
+*.csv
