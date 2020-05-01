@@ -4,6 +4,7 @@
 Created on Fri Mar 13 14:48:45 2020
 @author: Christian M. Orr
 """
+
 ################ SETUP ################
 
 #imports
@@ -45,7 +46,6 @@ If you only want to run analysis, run from the same place you ran processing but
 Make sure all of the other inputs are kept the same.
 
 Results will be printed in this console. Graphs will be saved in ./projectname_results/
-
 
       """)
 
@@ -94,6 +94,7 @@ shelxjob.write("module load shelx\n")
 shelxjob.write("shelxd "+projname+"_fa")
 shelxjob.close()
 os.chmod('shelxd_job.sh', 0o775)
+os.system("rm "+projname+"_results/mad.csv")
     
  # Read contents from file as a single string. Use RE package to allow for replacement
 def replace(file, pattern, subst):
@@ -162,7 +163,7 @@ def outliers(filename, resolution, sitessearched):
     print("number of CCall with CCall - median >  5 * MAD = "+str(mad5))
     print("Three largest CCall values: "+str(ccallmax))
     print("")
-    allmad = open("mad.csv", 'a') 
+    allmad = open(projname+"_results/mad.csv", 'a') 
     allmad.write(str(int(resolution) / 10)+","+str(sitessearched)+","+str(mad5)+","+str(mad6)+","+str(mad7)+","+str(mad8)+","+str(mad9)+","+str(mad10)+"\n")
     allmad.close()
     
