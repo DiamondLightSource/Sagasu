@@ -71,8 +71,8 @@ else:
 if pro_or_ana == 'p':    
     hklin = os.path.join(fa_path, projname+"_fa.hkl")
     insin = os.path.join(fa_path, projname+"_fa.ins")
-    totalrun = (((lowres - 1) - highres)) * (highsites - lowsites)
-    trytot = (totalrun * ntry)   
+totalrun = (((lowres - 1) - highres)) * (highsites - lowsites)
+trytot = (totalrun * ntry)   
 clusteranalysis = (str(input("Do you want to run cluster analysis in addition to outlier analysis (time consuming)? (y/n) "))).lower()
 if pro_or_ana == 'p':
     print("You have chosen the project name "+projname+" in location "+fa_path)
@@ -131,7 +131,7 @@ def results(filename):
 
 def analysis(filename, nums):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 'CCALL', 'CCWEAK', 'CFOM', 'BEST', 'PATFOM'])
-    ccallweak = df[['CCALL', 'CCALL']]
+    ccallweak = df[['CCALL', 'CCWEAK']]
     clustr = DBSCAN(eps=0.7, min_samples=1, n_jobs=-1).fit(ccallweak)
     labels = len(set(clustr.labels_))
     print("There are "+str(labels)+" cluster(s)")
@@ -168,6 +168,8 @@ def outliers(filename, resolution, sitessearched):
     allmad.close()
     
 ################ PROCESSING ################
+
+#run processing on either cluster or local
 if pro_or_ana == 'p': 
     if not os.path.exists(projname):
         os.system("mkdir "+projname)
@@ -222,6 +224,7 @@ if pro_or_ana == 'p':
         cont = (str(input("Have ALL cluster jobs FINISHED? (y/n): ")))
         cont = cont.lower()
 
+#prep files from shelxd runs
 if not os.path.exists(projname+"_results"):
     os.system("mkdir "+projname+"_results")
 i = highres
@@ -234,6 +237,7 @@ while not (i >= lowres):
         j = j - 1
     i = i + 1 
 
+#run cluster outlier analysis with optional cluster analysis
 if not os.path.exists(projname+"_figures"):
     os.system("mkdir "+projname+"_figures")
 i = highres
@@ -249,4 +253,19 @@ while not (i >= lowres):
             print("No cluster analysis requested")
         outliers(csvfile, i, j)
         j = j - 1
-    i = i + 1 
+    i = i + 1
+    
+df = pd.read_csv(projname+"_results/mad.csv", sep=',', names=['res', 'sites', 'mad5', 'mad6', 'mad7', 'mad8', 'mad9', 'mad10'])
+df['score'] = (df['mad5'] * 1) + (df['mad6'] * 4) + (df['mad7'] * 8) + (df['mad8'] * 32) + (df['mad9'] * 128) + (df['mad10'] * 512)
+df.sort_values(by=['score'], ascending=False,inplace=True)
+top = df[['res', 'sites', 'score']]
+top = df.head(10)
+print("""
+Here are the top 10 hits:
+
+""")
+print(top)
+ax = plt.axes(projection='3d')
+ax.plot_trisurf(df['res'], df['sites'], df['score'], cmap='viridis', edgecolor='none')
+madplot = plt.gcf()
+madplot.savefig(projname+"_figures/mad.png", dpi=600)
