@@ -5,5 +5,6 @@ shelxd.sh
 outliers.sh
 analysis.py
 shelxd_job.sh
+madanalysis.py
 *.png
 *.csv
