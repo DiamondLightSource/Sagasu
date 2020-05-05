@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import DBSCAN
 import heapq
+from mpl_toolkits.mplot3d import Axes3D
+
 
 plot_kwds = {'alpha' : 0.25, 's' : 80, 'linewidths':0}
 os.system("module load mx")
@@ -254,7 +256,8 @@ while not (i >= lowres):
         outliers(csvfile, i, j)
         j = j - 1
     i = i + 1
-    
+   
+#create and save top hits and madplot
 df = pd.read_csv(projname+"_results/mad.csv", sep=',', names=['res', 'sites', 'mad5', 'mad6', 'mad7', 'mad8', 'mad9', 'mad10'])
 df['score'] = (df['mad5'] * 1) + (df['mad6'] * 4) + (df['mad7'] * 8) + (df['mad8'] * 32) + (df['mad9'] * 128) + (df['mad10'] * 512)
 df.sort_values(by=['score'], ascending=False,inplace=True)
