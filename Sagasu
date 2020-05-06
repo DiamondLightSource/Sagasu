@@ -52,23 +52,18 @@ print("***Setup***")
 projname = input("Name of project (SHELX prefix): ") 
 if pro_or_ana == 'p': 
     fa_path = input("Path to SHELXC outputs: ")
-lowres = int((1 + (10 * float(input("Low resolution cutoff for grid: ")))))
-l2 = (lowres - 1) / 10
-highres = int((10 * float(input("High resolution cutoff for grid: "))))
-h2 = highres / 10
-lowsites = int(input("Minimum number of sites to search: "))
-highsites = int(input("Maximum number of sites to search: "))
-if pro_or_ana == 'p':
+    lowres = int((1 + (10 * float(input("Low resolution cutoff for grid: ")))))
+    l2 = (lowres - 1) / 10
+    highres = int((10 * float(input("High resolution cutoff for grid: "))))
+    h2 = highres / 10
+    lowsites = int(input("Minimum number of sites to search: "))
+    highsites = int(input("Maximum number of sites to search: "))
     clust = (str(input("Run on (c)luster or (l)ocal machine? "))).lower()
-if pro_or_ana == 'p':    
     ntry = int(input("Number of trials: "))
-else:
-    ntry = 1
-if pro_or_ana == 'p':    
     hklin = os.path.join(fa_path, projname+"_fa.hkl")
     insin = os.path.join(fa_path, projname+"_fa.ins")
-totalrun = (((lowres - 1) - highres)) * (highsites - lowsites)
-trytot = (totalrun * ntry)   
+    totalrun = (((lowres - 1) - highres)) * (highsites - lowsites)
+    trytot = (totalrun * ntry) 
 clusteranalysis = (str(input("Do you want to run cluster analysis in addition to outlier analysis (time consuming)? (y/n) "))).lower()
 if pro_or_ana == 'p':
     print("You have chosen the project name "+projname+" in location "+fa_path)
@@ -84,8 +79,9 @@ else:
     print("Running in analysis only mode")
 pro = input("Press enter to continue.")
 
-with open('inps.pkl', 'wb') as f:
-    pickle.dump([path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis], f)
+if pro_or_ana == 'p': 
+    with open('inps.pkl', 'wb') as f:
+        pickle.dump([path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis], f)
 
 #write shelx job file
 shelxjob = open("shelxd_job.sh","w")
@@ -148,7 +144,7 @@ if pro_or_ana == 'p':
 shelxjob = open("wait.sh","w")
 shelxjob.write("module load python/3\n")
 shelxjob.write("module load mx\n")
-shelxjob.write("time /home/i23user/bin/shelxgrid/sagasu_analysis.py 2>&1 | tee sagasuanalysis.log\n")
+shelxjob.write("/home/i23user/bin/shelxgrid/sagasu_analysis 2>&1 | tee sagasuanalysis.log")
 shelxjob.close()
 os.chmod('wait.sh', 0o775)
 if pro_or_ana == 'c':
