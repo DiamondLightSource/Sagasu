@@ -134,9 +134,6 @@ if pro_or_ana == 'p':
                       """)
                 os.system("cd "+workpath+"; ./shelxd_job.sh")
             elif clust == 'c':
-                print("""
-                Submitting to the cluster, please run 'watch qstat' in another terminal to check on progress
-                      """)
                 os.system("cd "+workpath+"; qsub -P i23 -q low.q -l h_vmem=4G -N sag_"+str(i)+"_"+str(j)+" -pe smp 40-10 -cwd ./shelxd_job.sh")
             else:
                 print("error in input...")
@@ -154,4 +151,6 @@ shelxjob.write("module load mx\n")
 shelxjob.write("time /home/i23user/bin/shelxgrid/sagasu_analysis.py 2>&1 | tee sagasuanalysis.log\n")
 shelxjob.close()
 os.chmod('wait.sh', 0o775)
+if pro_or_ana == 'c':
+    statusofrun = ''
 os.system("qsub "+statusofrun+" -N sagasuanalysis -P i23 -q low.q -l h_vmem=4G -pe smp 10 -cwd ./wait.sh")
