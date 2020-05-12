@@ -3,7 +3,7 @@
 """
 Created on Wed May  6 16:24:17 2020
 
-@author: vwg85559
+@author: Christian M. Orr
 """
 
 import pickle
@@ -17,7 +17,28 @@ from mpl_toolkits.mplot3d import Axes3D
 
 with open('inps.pkl', 'rb') as f:
     path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis = pickle.load(f)
- 
+    
+try:
+    os.remove(path+"/"+projname+"_results/mad.csv")
+except:
+    print("Could not delete mad.csv, shouldn't matter!")
+try:
+    os.remove(path+"/shelxd_job.sh")
+except:
+    print("Directory already clean...")
+    
+clusteranalysis = "n" #for testing
+
+print("""Loading inputs from inps.pkl...
+      
+      """)
+if clusteranalysis == 'y':
+    runclustana = "You have chosen to run cluster analysis, this may take some time."
+if clusteranalysis == 'n':
+    runclustana = "Clustering analysis is turned off, this should be quick!"
+print("Running analysis on "+projname+" with a low resolution cutoff of "+str(lowres/10)+"Å and a high resolution cutoff of "+str(highres/10)+"Å. Searching for a minimum of "+str(lowsites)+" sites and a maxmum of "+str(highsites)+" sites. There were "+str(ntry)+" trys per shelxd run. "+runclustana)
+print("")
+
 def results(filename):
     with open(filename, 'r') as file:
         filedata = file.read()
@@ -121,6 +142,7 @@ df['score'] = (df['mad5'] * 1) + (df['mad6'] * 4) + (df['mad7'] * 8) + (df['mad8
 df.sort_values(by=['score'], ascending=False,inplace=True)
 top = df[['res', 'sites', 'score']]
 top = df.head(10)
+top = top.reset_index(drop=True)
 print("""
 Here are the top 10 hits:
 
@@ -130,3 +152,20 @@ ax = plt.axes(projection='3d')
 ax.plot_trisurf(df['res'], df['sites'], df['score'], cmap='viridis', edgecolor='none')
 madplot = plt.gcf()
 madplot.savefig(projname+"_figures/mad.png", dpi=600)
+
+firstres, firstsites, secondres, secondsites = top.iloc[[0],[0]].values[0], top.iloc[[0],[1]].values[0], top.iloc[[1],[0]].values[0], top.iloc[[1],[1]].values[0]
+firstres, firstsites, secondres, secondsites = ((firstres*10).astype(np.int)).item(0), (firstsites.astype(np.int)).item(0), ((secondres*10).astype(np.int)).item(0), (secondsites.astype(np.int)).item(0)
+
+with open(path+"/"+projname+"/"+str(firstres)+"/"+str(firstsites)+"/"+projname+"_fa.res", 'r') as infile:
+        for line in infile:
+            if line.startswith("TITL"):
+                words = line.split()
+                sg = words[-1]
+
+print("The space group has been identified as "+sg)
+phenixemma = open("phenix_emma.sh","w")
+phenixemma.write("module load phenix \n")
+phenixemma.write("phenix.emma "+path+"/"+projname+"/"+str(firstres)+"/"+str(firstsites)+"/"+projname+"_fa.pdb "+path+"/"+projname+"/"+str(secondres)+"/"+str(secondsites)+"/"+projname+"_fa.pdb --tolerance=6 --space_group="+sg+" 2>&1 | tee -a sagasu.log")
+phenixemma.close()
+os.chmod('phenix_emma.sh', 0o775)
+os.system("qsub -hold_jid sagasuanalysis -N sagasu_emma -P i23 -q low.q -l h_vmem=4G -pe smp 10 -cwd ./phenix_emma.sh")

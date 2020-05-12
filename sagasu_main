@@ -69,9 +69,9 @@ if pro_or_ana == 'p':
     print("You have chosen the project name "+projname+" in location "+fa_path)
     print("")
     if clust == 'l':
-        print("This will run the grid search on this machine between "+str(l2)+"A and "+str(h2)+"A. The site range is between "+str(lowsites)+" and "+str(highsites)+". As you are running on a local machine, this search may take quite a long time")
+        print("This will run the grid search on this machine between "+str(l2)+"Å and "+str(h2)+"Å. The site range is between "+str(lowsites)+" and "+str(highsites)+". As you are running on a local machine, this search may take quite a long time")
     if clust == 'c':       
-        print("This will run the grid search on the Diamond cluster between "+str(l2)+"A and "+str(h2)+"A. The site range is between "+str(lowsites)+" and "+str(highsites)+". Please open another terminal to check on the queue status - 'qstat'")
+        print("This will run the grid search on the Diamond cluster between "+str(l2)+"Å and "+str(h2)+"Å. The site range is between "+str(lowsites)+" and "+str(highsites)+". Please open another terminal to check on the queue status - 'qstat'")
     print("")
     print("Number of shelxd runs: "+str(totalrun))
     print("Grand total number of trys: "+str(trytot))
@@ -88,7 +88,6 @@ if pro_or_ana == 'p':
     shelxjob.write("shelxd "+projname+"_fa")
     shelxjob.close()
     os.chmod('shelxd_job.sh', 0o775)
-    os.system("rm "+projname+"_results/mad.csv")
     
  # Read contents from file as a single string. Use RE package to allow for replacement
 def replace(file, pattern, subst):
@@ -142,9 +141,11 @@ if pro_or_ana == 'p':
     
 shelxjob = open("wait.sh","w")
 shelxjob.write("module load python/3 \n")
-shelxjob.write("/home/i23user/bin/shelxgrid/sagasu_analysis")
+shelxjob.write("/home/i23user/bin/shelxgrid/sagasu_analysis 2>&1 | tee -a sagasu.log")
 shelxjob.close()
 os.chmod('wait.sh', 0o775)
 if pro_or_ana == 'a':
     statusofrun = ''
 os.system("qsub "+statusofrun+" -N sagasuanalysis -P i23 -q low.q -l h_vmem=4G -pe smp 10 -cwd ./wait.sh")
+
+os.system("tail -f sagasu.log")
