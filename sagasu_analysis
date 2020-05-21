@@ -260,19 +260,17 @@ def ccweakoutliers(filename, resolution, sitessearched):
 ################ ANALYSIS ################
 
 #prep files from shelxd runs
-# =============================================================================
-# if not os.path.exists(projname+"_results"):
-#     os.system("mkdir "+projname+"_results")
-# i = highres
-# while not (i >= lowres):
-#     i2 = (i/10)
-#     j = highsites
-#     while not (j <= (lowsites - 1)):
-#         lstfile = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.lst")
-#         results(lstfile)
-#         j = j - 1
-#     i = i + 1 
-# =============================================================================
+if not os.path.exists(projname+"_results"):
+    os.system("mkdir "+projname+"_results")
+i = highres
+while not (i >= lowres):
+    i2 = (i/10)
+    j = highsites
+    while not (j <= (lowsites - 1)):
+        lstfile = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.lst")
+        results(lstfile)
+        j = j - 1
+    i = i + 1 
 
 #run cluster outlier analysis with optional cluster analysis
 if not os.path.exists(projname+"_figures"):
