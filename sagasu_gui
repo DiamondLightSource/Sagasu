@@ -3,7 +3,7 @@
 """
 Created on Mon Mar 30 16:56:12 2020
 
-@author: vwg85559
+@author: Christian M. Orr
 """
 import os
 from shutil import move
