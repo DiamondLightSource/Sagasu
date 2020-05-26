@@ -14,8 +14,7 @@ import numpy as np
 import math
 import os
 import pickle
-from sklearn.cluster import DBSCAN, MeanShift
-from sklearn.mixture import GaussianMixture
+from sklearn.cluster import DBSCAN
 import heapq
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
@@ -140,14 +139,13 @@ def clustering_distance(csvfile, nums, i, j):
     csd = arr.std(axis=0)
     print(cmean, csd)
     outliermask = (((arr[:,0]) > (cmean[0] - (2 * csd[0]))) & ((arr[:,1]) > (cmean[1] - (2 * csd[1]))))
-    arr = arr[outliermask]
+    arr_out = arr[outliermask]
     ni = 1000
     gmm = bgm(n_components=2, 
               covariance_type='full', 
               max_iter=ni, 
-              init_params='kmeans', 
-              weight_concentration_prior_type='dirichlet_distribution',
-              tol=1e-2)
+              init_params='kmeans',
+              tol=1e-6)
     plot_gmm(gmm, arr, ni, nums)
           
 
@@ -196,9 +194,10 @@ def ccalloutliers(filename, resolution, sitessearched):
     print(cmean, csd)
     outliermask = (((arr[:,0]) > (cmean[0] - (2 * csd[0]))) & ((arr[:,1]) > (cmean[1] - (2 * csd[1]))))
     arr = arr[outliermask]
-    mad = np.median(np.sqrt((arr[0] - median)**2))
-    ccallmax = heapq.nlargest(3, arr[0])
-    ccallmad = arr[0] - median
+    print(arr)
+    mad = np.median(np.sqrt((arr[:,0] - median)**2))
+    ccallmax = heapq.nlargest(3, arr[:,0])
+    ccallmad = arr[:,0] - median
     mad10 = sum(i > 10 * mad for i in ccallmad)
     mad9 = sum(i > 9 * mad for i in ccallmad)
     mad8 = sum(i > 8 * mad for i in ccallmad)
