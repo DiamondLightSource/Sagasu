@@ -23,7 +23,7 @@ gc.enable()
 
 #load variables from sagasu_main
 with open('inps.pkl', 'rb') as f:
-    path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis = pickle.load(f)
+    path, projname, lowres, highres, lowsites, highsites, clust, ntry, clusteranalysis = pickle.load(f)
 
 #clean up folders and files from previous runs    
 try:
