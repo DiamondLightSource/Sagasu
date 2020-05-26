@@ -125,7 +125,6 @@ def plot_gmm(gmm, X, n_init, nums, label=True, ax=None):
                      str(round((gmm.weights_[1])*100, 1))+"\n")
     ax = plt.gcf()
     ax.savefig(path+"/"+projname+"_figures/"+nums+"_clsdst.png", dpi=300)
-    plt.show()    
     ax.clear()
     plt.close(ax)    
 
@@ -148,15 +147,12 @@ def clustering_distance(csvfile, nums, i, j):
               tol=1e-6)
     plot_gmm(gmm, arr, ni, nums)
           
-
 def analysis(filename, nums, a_res, a_sites):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 
                                                'CCALL', 'CCWEAK', 'CFOM', 
                                                'BEST', 'PATFOM'])
     ccallweak = df[['CCALL', 'CCWEAK']]
     clustr = DBSCAN(eps=0.7, min_samples=1, n_jobs=-1).fit(ccallweak)
-    #clustr = MeanShift(n_jobs=-1).fit(ccallweak)
-    #clustr = GaussianMixture(n_components=2).fit(ccallweak)
     labels = len(set(clustr.labels_))
     print("DBSCAN found "+str(labels)+" cluster(s)")
     plt.scatter(df['CCALL'], df['CCWEAK'], c= clustr.labels_.astype(float),
