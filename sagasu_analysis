@@ -248,19 +248,17 @@ def ccweakoutliers(filename, resolution, sitessearched):
 ################ ANALYSIS ################
 
 #prep files from shelxd runs
-# =============================================================================
-# if not os.path.exists(projname+"_results"):
-#     os.system("mkdir "+projname+"_results")
-# i = highres
-# while not (i >= lowres):
-#     i2 = (i/10)
-#     j = highsites
-#     while not (j <= (lowsites - 1)):
-#         lstfile = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.lst")
-#         results(lstfile)
-#         j = j - 1
-#     i = i + 1 
-# =============================================================================
+if not os.path.exists(projname+"_results"):
+    os.system("mkdir "+projname+"_results")
+i = highres
+while not (i >= lowres):
+    i2 = (i/10)
+    j = highsites
+    while not (j <= (lowsites - 1)):
+        lstfile = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.lst")
+        results(lstfile)
+        j = j - 1
+    i = i + 1 
 
 #run cluster outlier analysis with optional cluster analysis
 if not os.path.exists(projname+"_figures"):
@@ -330,7 +328,3 @@ phenixemma.write("phenix.emma "+path+"/"+projname+"/"+str(firstres)+"/"+
 phenixemma.close()
 os.chmod('phenix_emma.sh', 0o775)
 os.system('./phenix_emma.sh')
-# =============================================================================
-# os.system("qsub -hold_jid sagasuanalysis -N sagasu_emma -P i23 -q low.q -l h_vmem=4G -pe smp 10 -cwd ./phenix_emma.sh")
-# gc.collect()
-# =============================================================================
