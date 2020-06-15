@@ -23,7 +23,7 @@ gc.enable()
 
 #load variables from sagasu_main
 with open('inps.pkl', 'rb') as f:
-    path, projname, lowres, highres, lowsites, highsites, clust, ntry, clusteranalysis = pickle.load(f)
+    path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis = pickle.load(f)
 
 #clean up folders and files from previous runs    
 try:
@@ -118,6 +118,7 @@ def plot_gmm(gmm, X, n_init, nums, label=True, ax=None):
     meanchange = np.vstack((gmm.means_, gmm.mean_prior_))
     dist_c = math.sqrt(((abs((gmm.means_[0][0])-(gmm.means_[1][0])))**2)+
                     ((abs((gmm.means_[0][1])-(gmm.means_[1][1])))**2))
+    print("Distance between clusters = "+str(dist_c))
     separation = open(projname+"_results/clusterseparations.csv", 'a')
     separation.write(str(meanchange[0])+","+str(meanchange[1])+","+
                      str(meanchange[2])+","+str(dist_c)+","+
@@ -136,7 +137,6 @@ def clustering_distance(csvfile, nums, i, j):
     arr = df[['CCALL', 'CCWEAK']].to_numpy()
     cmean = arr.mean(axis=0)
     csd = arr.std(axis=0)
-    print(cmean, csd)
     outliermask = (((arr[:,0]) > (cmean[0] - (2 * csd[0]))) & ((arr[:,1]) > (cmean[1] - (2 * csd[1]))))
     arr_out = arr[outliermask]
     ni = 1000
@@ -165,7 +165,6 @@ def analysis(filename, nums, a_res, a_sites):
     ccallvsccweak.savefig(path+"/"+projname+"_figures/"+nums+".png", dpi=300)
     ccallvsccweak.clear()
     plt.close(ccallvsccweak)
-    #plt.show()
 
 def analysis_2(filename, nums, a_res, a_sites):
     df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO', 
@@ -187,10 +186,8 @@ def ccalloutliers(filename, resolution, sitessearched):
     arr = df[['CCALL', 'CCWEAK']].to_numpy()
     cmean = arr.mean(axis=0)
     csd = arr.std(axis=0)
-    print(cmean, csd)
     outliermask = (((arr[:,0]) > (cmean[0] - (2 * csd[0]))) & ((arr[:,1]) > (cmean[1] - (2 * csd[1]))))
     arr = arr[outliermask]
-    print(arr)
     mad = np.median(np.sqrt((arr[:,0] - median)**2))
     ccallmax = heapq.nlargest(3, arr[:,0])
     ccallmad = arr[:,0] - median
@@ -200,7 +197,6 @@ def ccalloutliers(filename, resolution, sitessearched):
     mad7 = sum(i > 7 * mad for i in ccallmad)
     mad6 = sum(i > 6 * mad for i in ccallmad)
     mad5 = sum(i > 5 * mad for i in ccallmad)
-    print("For a resolution cutoff of "+str(resolution)+" with "+str(sitessearched)+" sites:")
     print("number of CCall with CCall - median > 10 * MAD = "+str(mad10))
     print("number of CCall with CCall - median >  9 * MAD = "+str(mad9))
     print("number of CCall with CCall - median >  8 * MAD = "+str(mad8))
@@ -208,7 +204,6 @@ def ccalloutliers(filename, resolution, sitessearched):
     print("number of CCall with CCall - median >  6 * MAD = "+str(mad6))
     print("number of CCall with CCall - median >  5 * MAD = "+str(mad5))
     print("Three largest CCall values: "+str(ccallmax))
-    print("")
     allmad = open(projname+"_results/ccall.csv", 'a') 
     allmad.write(str(int(resolution) / 10)+","+str(sitessearched)+","+
                  str(mad5)+","+str(mad6)+","+str(mad7)+","+str(mad8)+","+
@@ -224,19 +219,17 @@ def ccweakoutliers(filename, resolution, sitessearched):
     arr = df[['CCALL', 'CCWEAK']].to_numpy()
     cmean = arr.mean(axis=0)
     csd = arr.std(axis=0)
-    print(cmean, csd)
     outliermask = (((arr[:,0]) > (cmean[0] - (2 * csd[0]))) & ((arr[:,1]) > (cmean[1] - (2 * csd[1]))))
     arr = arr[outliermask]
-    mad = np.median(np.sqrt((arr[1] - median)**2))
-    ccweakmax = heapq.nlargest(3, arr[1])
-    ccweakmad = arr[1] - median
+    mad = np.median(np.sqrt((arr[:,1] - median)**2))
+    ccweakmax = heapq.nlargest(3, arr[:,1])
+    ccweakmad = arr[:,1] - median
     mad10 = sum(i > 10 * mad for i in ccweakmad)
     mad9 = sum(i > 9 * mad for i in ccweakmad)
     mad8 = sum(i > 8 * mad for i in ccweakmad)
     mad7 = sum(i > 7 * mad for i in ccweakmad)
     mad6 = sum(i > 6 * mad for i in ccweakmad)
     mad5 = sum(i > 5 * mad for i in ccweakmad)
-    print("For a resolution cutoff of "+str(resolution)+" with "+str(sitessearched)+" sites:")
     print("number of CCweak with CCweak - median > 10 * MAD = "+str(mad10))
     print("number of CCweak with CCweak - median >  9 * MAD = "+str(mad9))
     print("number of CCweak with CCweak - median >  8 * MAD = "+str(mad8))
@@ -255,17 +248,19 @@ def ccweakoutliers(filename, resolution, sitessearched):
 ################ ANALYSIS ################
 
 #prep files from shelxd runs
-if not os.path.exists(projname+"_results"):
-    os.system("mkdir "+projname+"_results")
-i = highres
-while not (i >= lowres):
-    i2 = (i/10)
-    j = highsites
-    while not (j <= (lowsites - 1)):
-        lstfile = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.lst")
-        results(lstfile)
-        j = j - 1
-    i = i + 1 
+# =============================================================================
+# if not os.path.exists(projname+"_results"):
+#     os.system("mkdir "+projname+"_results")
+# i = highres
+# while not (i >= lowres):
+#     i2 = (i/10)
+#     j = highsites
+#     while not (j <= (lowsites - 1)):
+#         lstfile = os.path.join(path, projname+"/"+str(i)+"/"+str(j)+"/"+projname+"_fa.lst")
+#         results(lstfile)
+#         j = j - 1
+#     i = i + 1 
+# =============================================================================
 
 #run cluster outlier analysis with optional cluster analysis
 if not os.path.exists(projname+"_figures"):
@@ -275,14 +270,19 @@ while not (i >= lowres):
     i2 = (i/10)
     j = highsites
     while not (j <= (lowsites - 1)):
+        print("Results for "+str(i2)+"Å, "+str(j)+" sites:")
         csvfile = os.path.join(path, projname+"_results/"+str(i)+"_"+str(j)+".csv")
         numbers = str(i)+"_"+str(j)
         if clusteranalysis == 'y':
+            print("***Bayesian Gaussian Mixture Analysis***")
             clustering_distance( csvfile, numbers, i, j)
+            print("***DBSCAN Analysis***")
             analysis(csvfile, numbers, i, j)
+            print("***Generating Hexplots***")
             analysis_2(csvfile, numbers, i, j)
         else:
             print("No cluster analysis requested")
+        print("***Outlier Analysis***")
         ccalloutliers(csvfile, i, j)
         ccweakoutliers(csvfile, i, j)
         gc.collect()

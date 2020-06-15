@@ -93,7 +93,7 @@ pro = input("Press enter to continue.")
 if pro_or_ana == 'a':
     clust = 'l'
 with open('inps.pkl', 'wb') as f:
-    pickle.dump([path, projname, lowres, highres, lowsites, highsites, clust, ntry, clusteranalysis], f)        
+    pickle.dump([path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis], f)        
     
 #write shelx job file
     shelxjob = open("shelxd_job.sh","w")
