@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+
+"""
+Created on Mon Mar 30 16:56:12 2020
+
+@author: Christian M. Orr
+"""
+import sagasu_core
+import tkinter as tk
+import os
+
+os.system("module load mx")
+os.system("module load global/cluster")
+path = os.getcwd()
+
+HEIGHT = 700
+WIDTH = 800
+
+
+def run_sagasu(
+    projname, pro_or_ana, highres, lowres, highsites, lowsites, fa_path, ntry, clust
+):
+    clusteranalysis = "y"
+    projname = projname
+    pro_or_ana = str(pro_or_ana).lower()
+    highres = int((10 * float(highres)))
+    lowres = int((10 * float(lowres)))
+    highsites = int(highsites)
+    lowsites = int(lowsites)
+    insin = os.path.join(fa_path, projname + "_fa.ins")
+    hklin = os.path.join(fa_path, projname + "_fa.hkl")
+    ntry = int(ntry)
+    statusofrun = "-hold_jid "
+    clust = str(clust).lower()
+    sagasu_core.shelx_write(projname)
+    sagasu_core.run_sagasu_proc(
+        pro_or_ana,
+        projname,
+        highres,
+        lowres,
+        highsites,
+        lowsites,
+        insin,
+        hklin,
+        path,
+        ntry,
+        statusofrun,
+        clust,
+    )
+    sagasu_core.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
+    sagasu_core.run_sagasu_analysis(
+        projname, highres, lowres, highsites, lowsites, pathj, clusteranalysis
+    )
+    sagasu_core.tophits(proname, path)
+
+
+height = 400
+width = 400
+
+root = tk.Tk()
+root.title("Sagasu - SHELXD Grid Search")
+root.configure(background="white", height=height, width=width)
+
+sagasutitle = tk.Label(root, text="探す", font=120, bg="blue", fg="black").grid(
+    row=0, column=0, columnspan=4
+)
+
+frame = tk.Frame(root, bg="#80c1ff", bd=5)
+frame.grid(row=1, column=1)
+
+pa = tk.StringVar()
+tk.Radiobutton(frame, text="Processing", variable=pa, value="p").grid(
+    row=1, column=0, columnspan=2, padx=5, pady=5
+)
+tk.Radiobutton(frame, text="Analysis", variable=pa, value="a").grid(
+    row=1, column=2, columnspan=2, padx=5, pady=5
+)
+
+projnameTxt = tk.Label(frame, text="Project name: ", fg="black").grid(row=2, column=0)
+
+projnameIn = tk.Entry(frame, width=10, bg="green")
+projnameIn.grid(row=2, column=1, columnspan=3, sticky="W")
+
+fa_pathTxt = tk.Label(frame, text="Project path: ", fg="black").grid(row=3, column=0)
+
+fa_pathIn = tk.Entry(frame, width=40)
+fa_pathIn.grid(row=3, column=1, columnspan=3, sticky="W")
+
+lowresTxt = tk.Label(frame, text="Low res: ", fg="black").grid(row=4, column=0)
+
+lowresIn = tk.Entry(frame, width=4)
+lowresIn.grid(row=4, column=1)
+
+highresTxt = tk.Label(frame, text="High res: ", fg="black").grid(row=4, column=2)
+
+highresIn = tk.Entry(frame, width=4)
+highresIn.grid(row=4, column=3)
+
+lowsitesTxt = tk.Label(frame, text="Low sites: ", fg="black").grid(row=5, column=0)
+
+lowsitesIn = tk.Entry(frame, width=4)
+lowsitesIn.grid(row=5, column=1)
+
+highsitesTxt = tk.Label(frame, text="High sites: ", fg="black").grid(row=5, column=2)
+
+highsitesIn = tk.Entry(frame, width=4)
+highsitesIn.grid(row=5, column=3)
+
+ntryTxt = tk.Label(frame, text="Trys: ", fg="black").grid(row=6, column=0)
+
+ntryIn = tk.Entry(frame, width=7)
+ntryIn.grid(row=6, column=2, columnspan=2)
+
+cl = tk.StringVar()
+tk.Radiobutton(frame, text="Cluster", variable=cl, value="c").grid(
+    row=7, column=0, columnspan=2, padx=5, pady=5
+)
+tk.Radiobutton(frame, text="Local", variable=cl, value="l").grid(
+    row=7, column=2, columnspan=2, padx=5, pady=5
+)
+
+sub = tk.Button(
+    frame,
+    text="Run Sagasu",
+    width=15,
+    command=lambda: run_sagasu(
+        projnameIn.get(),
+        pa.get(),
+        highresIn.get(),
+        lowresIn.get(),
+        highsitesIn.get(),
+        lowsitesIn.get(),
+        fa_pathIn.get(),
+        ntryIn.get(),
+        cl.get(),
+    ),
+).grid(row=8, column=1, columnspan=3, sticky="E")
+
+root.mainloop()

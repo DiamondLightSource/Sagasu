@@ -18,70 +18,90 @@ from sklearn.cluster import DBSCAN
 import heapq
 from mpl_toolkits.mplot3d import Axes3D
 import gc
+
 sns.set()
 gc.enable()
 
 # load variables from sagasu_main
-with open('inps.pkl', 'rb') as f:
-    path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis = pickle.load(f)
+with open("inps.pkl", "rb") as f:
+    path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis = pickle.load(
+        f
+    )
 
 # clean up folders and files from previous runs
 try:
-    os.remove(path+"/"+projname+"_results/ccweak.csv")
-except():
+    os.remove(path + "/" + projname + "_results/ccweak.csv")
+except ():
     print("Could not delete ccweak.csv, shouldn't matter!")
 try:
-    os.remove(path+"/"+projname+"_results/ccall.csv")
-except():
+    os.remove(path + "/" + projname + "_results/ccall.csv")
+except ():
     print("Could not delete ccall.csv, shouldn't matter!")
 try:
-    os.remove(path+"/shelxd_job.sh")
-except():
+    os.remove(path + "/shelxd_job.sh")
+except ():
     print("Directory already clean...")
 try:
-    os.remove(path+"/"+projname+"_results/clusterseparations.csv")
-except():
+    os.remove(path + "/" + projname + "_results/clusterseparations.csv")
+except ():
     print("No cluster separations file found...")
 
-print("""Loading inputs from inps.pkl...
+print(
+    """Loading inputs from inps.pkl...
 
-      """)
-if clusteranalysis == 'y':
-    runclustana = ("""You have chosen to run cluster analysis,
-    this may take some time.""")
-if clusteranalysis == 'n':
+      """
+)
+if clusteranalysis == "y":
+    runclustana = """You have chosen to run cluster analysis,
+    this may take some time."""
+if clusteranalysis == "n":
     runclustana = "Clustering analysis is turned off, this should be quick!"
-print("Running analysis on " + projname + " with a low resolution cutoff of " +
-      str(lowres / 10) + "Å and a high resolution cutoff of " +
-      str(highres / 10) + "Å. Searching for a minimum of " + str(lowsites) +
-      " sites and a maxmum of " + str(highsites) + " sites. There were " +
-      str(ntry) + " trys per shelxd run. " + runclustana)
+print(
+    "Running analysis on "
+    + projname
+    + " with a low resolution cutoff of "
+    + str(lowres / 10)
+    + "Å and a high resolution cutoff of "
+    + str(highres / 10)
+    + "Å. Searching for a minimum of "
+    + str(lowsites)
+    + " sites and a maxmum of "
+    + str(highsites)
+    + " sites. There were "
+    + str(ntry)
+    + " trys per shelxd run. "
+    + runclustana
+)
 print("")
 
 
 def results(filename):
-    with open(filename, 'r') as file:
+    with open(filename, "r") as file:
         filedata = file.read()
-        filedata = filedata.replace('/', ' ')
-        filedata = filedata.replace(',', ' ')
-        filedata = filedata.replace('CC', '')
-        filedata = filedata.replace('All', '')
-        filedata = filedata.replace('Weak', '')
-        filedata = filedata.replace('CFOM', '')
-        filedata = filedata.replace('best', '')
-        filedata = filedata.replace('PATFOM', '')
-        filedata = filedata.replace('CPU', '')
-    with open(filename, 'w') as file:
+        filedata = filedata.replace("/", " ")
+        filedata = filedata.replace(",", " ")
+        filedata = filedata.replace("CC", "")
+        filedata = filedata.replace("All", "")
+        filedata = filedata.replace("Weak", "")
+        filedata = filedata.replace("CFOM", "")
+        filedata = filedata.replace("best", "")
+        filedata = filedata.replace("PATFOM", "")
+        filedata = filedata.replace("CPU", "")
+    with open(filename, "w") as file:
         file.write(filedata)
-    with open(filename, 'r') as infile, open(path + "/" + projname + "_results/" + str(i) + "_" + str(j) + ".csv", 'w') as outfile:
+    with open(filename, "r") as infile, open(
+        path + "/" + projname + "_results/" + str(i) + "_" + str(j) + ".csv", "w"
+    ) as outfile:
         for line in infile:
             if line.startswith(" Try"):
-                outfile.write(','.join(line.split()) + '\n')
-    with open(path + "/" + projname + "_results/" + str(i) + "_" + str(j) +
-              ".csv", 'r') as f:
+                outfile.write(",".join(line.split()) + "\n")
+    with open(
+        path + "/" + projname + "_results/" + str(i) + "_" + str(j) + ".csv", "r"
+    ) as f:
         data = f.read()
-        with open(path + "/" + projname + "_results/" + str(i) + "_" + str(j) +
-                  ".csv", 'w') as w:
+        with open(
+            path + "/" + projname + "_results/" + str(i) + "_" + str(j) + ".csv", "w"
+        ) as w:
             w.write(data[:-1])
 
 
@@ -98,101 +118,139 @@ def draw_ellipse(position, covariance, ax=None, **kwargs):
         width, height = 2 * np.sqrt(covariance)
     # Draw the Ellipse
     for nsig in range(1, 4):
-        ax.add_patch(Ellipse(position, nsig * width, nsig * height,
-                             angle, **kwargs))
+        ax.add_patch(Ellipse(position, nsig * width, nsig * height, angle, **kwargs))
 
 
 def plot_gmm(gmm, X, n_init, nums, label=True, ax=None):
     ax = ax or plt.gca()
     labels = gmm.fit(X).predict(X)
     if label:
-        ax.scatter(X[:, 0], X[:, 1], c=labels, s=40, cmap='viridis', zorder=2)
+        ax.scatter(X[:, 0], X[:, 1], c=labels, s=40, cmap="viridis", zorder=2)
     else:
         ax.scatter(X[:, 0], X[:, 1], s=40, zorder=2)
-    ax.axis('equal')
+    ax.axis("equal")
     w_factor = 0.2 / gmm.weights_.max()
     for pos, covar, w in zip(gmm.means_, gmm.covariances_, gmm.weights_):
         draw_ellipse(pos, covar, alpha=w * w_factor)
     if gmm.converged_ is True:
-        print("Clustering converged after "+str(gmm.n_iter_)+" iterations")
+        print("Clustering converged after " + str(gmm.n_iter_) + " iterations")
     if gmm.converged_ is False:
-        print("Clustering did not converge after "+str(n_init)+" iterations")
-    print(str(round((gmm.weights_[0]) * 100, 1)) + "% in first cluster, " +
-          str(round((gmm.weights_[1]) * 100, 1)) + "% in second cluster")
+        print("Clustering did not converge after " + str(n_init) + " iterations")
+    print(
+        str(round((gmm.weights_[0]) * 100, 1))
+        + "% in first cluster, "
+        + str(round((gmm.weights_[1]) * 100, 1))
+        + "% in second cluster"
+    )
     meanchange = np.vstack((gmm.means_, gmm.mean_prior_))
-    dist_c = math.sqrt(((abs((gmm.means_[0][0]) - (gmm.means_[1][0]))) ** 2) +
-                       ((abs((gmm.means_[0][1]) - (gmm.means_[1][1]))) ** 2))
-    print("Distance between clusters = "+str(dist_c))
-    separation = open(projname+"_results/clusterseparations.csv", 'a')
-    separation.write(str(meanchange[0]) + "," + str(meanchange[1]) + "," +
-                     str(meanchange[2]) + "," + str(dist_c) + "," +
-                     str(round((gmm.weights_[0]) * 100, 1)) + "," +
-                     str(round((gmm.weights_[1]) * 100, 1)) + "\n")
+    dist_c = math.sqrt(
+        ((abs((gmm.means_[0][0]) - (gmm.means_[1][0]))) ** 2)
+        + ((abs((gmm.means_[0][1]) - (gmm.means_[1][1]))) ** 2)
+    )
+    print("Distance between clusters = " + str(dist_c))
+    separation = open(projname + "_results/clusterseparations.csv", "a")
+    separation.write(
+        str(meanchange[0])
+        + ","
+        + str(meanchange[1])
+        + ","
+        + str(meanchange[2])
+        + ","
+        + str(dist_c)
+        + ","
+        + str(round((gmm.weights_[0]) * 100, 1))
+        + ","
+        + str(round((gmm.weights_[1]) * 100, 1))
+        + "\n"
+    )
     ax = plt.gcf()
-    ax.savefig(path+"/"+projname+"_figures/"+nums+"_clsdst.png", dpi=300)
+    ax.savefig(path + "/" + projname + "_figures/" + nums + "_clsdst.png", dpi=300)
     ax.clear()
     plt.close(ax)
 
 
 def clustering_distance(csvfile, nums, i, j):
-    df = pd.read_csv(csvfile, sep=',', names=['linebeg', 'TRY', 'CPUNO',
-                                              'CCALL', 'CCWEAK', 'CFOM',
-                                              'BEST', 'PATFOM'])
-    arr = df[['CCALL', 'CCWEAK']].to_numpy()
+    df = pd.read_csv(
+        csvfile,
+        sep=",",
+        names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM"],
+    )
+    arr = df[["CCALL", "CCWEAK"]].to_numpy()
     cmean = arr.mean(axis=0)
     csd = arr.std(axis=0)
-    outliermask = (((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & ((arr[:, 1]) >
-                   (cmean[1] - (2 * csd[1]))))
+    outliermask = ((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & (
+        (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
+    )
     arr_out = arr[outliermask]
     ni = 1000
-    gmm = bgm(n_components=2, covariance_type='full', max_iter=ni,
-              init_params='kmeans', tol=1e-6)
+    gmm = bgm(
+        n_components=2,
+        covariance_type="full",
+        max_iter=ni,
+        init_params="kmeans",
+        tol=1e-6,
+    )
     plot_gmm(gmm, arr, ni, nums)
 
 
 def analysis(filename, nums, a_res, a_sites):
-    df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO',
-                                               'CCALL', 'CCWEAK', 'CFOM',
-                                               'BEST', 'PATFOM'])
-    ccallweak = df[['CCALL', 'CCWEAK']]
+    df = pd.read_csv(
+        filename,
+        sep=",",
+        names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM"],
+    )
+    ccallweak = df[["CCALL", "CCWEAK"]]
     clustr = DBSCAN(eps=0.7, min_samples=1, n_jobs=-1).fit(ccallweak)
     labels = len(set(clustr.labels_))
-    print("DBSCAN found "+str(labels)+" cluster(s)")
-    plt.scatter(df['CCALL'], df['CCWEAK'], c=clustr.labels_.astype(float),
-                marker='+', s=50, alpha=0.5)
+    print("DBSCAN found " + str(labels) + " cluster(s)")
+    plt.scatter(
+        df["CCALL"],
+        df["CCWEAK"],
+        c=clustr.labels_.astype(float),
+        marker="+",
+        s=50,
+        alpha=0.5,
+    )
     plt.xlabel("CCALL")
     plt.ylabel("CCWEAK")
-    plt.title("Resolution: "+str(a_res/10)+"Å , Sites: "+str(a_sites))
+    plt.title("Resolution: " + str(a_res / 10) + "Å , Sites: " + str(a_sites))
     plt.draw()
     ccallvsccweak = plt.gcf()
-    ccallvsccweak.savefig(path+"/"+projname+"_figures/"+nums+".png", dpi=300)
+    ccallvsccweak.savefig(path + "/" + projname + "_figures/" + nums + ".png", dpi=300)
     ccallvsccweak.clear()
     plt.close(ccallvsccweak)
 
 
 def analysis_2(filename, nums, a_res, a_sites):
-    df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO',
-                                               'CCALL', 'CCWEAK', 'CFOM',
-                                               'BEST', 'PATFOM'])
-    sns.jointplot(x=df['CCALL'], y=df['CCWEAK'], kind='hex', space=0)
+    df = pd.read_csv(
+        filename,
+        sep=",",
+        names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM"],
+    )
+    sns.jointplot(x=df["CCALL"], y=df["CCWEAK"], kind="hex", space=0)
     plt.draw()
     snsplot = plt.gcf()
-    snsplot.savefig(path+"/"+projname+"_figures/"+nums+"_hexplot.png", dpi=300)
+    snsplot.savefig(
+        path + "/" + projname + "_figures/" + nums + "_hexplot.png", dpi=300
+    )
     snsplot.clear()
     plt.close(snsplot)
 
 
 def ccalloutliers(filename, resolution, sitessearched):
-    df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO',
-                                               'CCALL', 'CCWEAK', 'CFOM',
-                                               'BEST', 'PATFOM'])
+    df = pd.read_csv(
+        filename,
+        sep=",",
+        names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM"],
+    )
     pd.DataFrame.drop(df, labels="linebeg", axis=1, inplace=True)
-    median = df['CCALL'].median()
-    arr = df[['CCALL', 'CCWEAK']].to_numpy()
+    median = df["CCALL"].median()
+    arr = df[["CCALL", "CCWEAK"]].to_numpy()
     cmean = arr.mean(axis=0)
     csd = arr.std(axis=0)
-    outliermask = (((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & ((arr[:, 1]) >
-                   (cmean[1] - (2 * csd[1]))))
+    outliermask = ((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & (
+        (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
+    )
     arr = arr[outliermask]
     mad = np.median(np.sqrt((arr[:, 0] - median) ** 2))
     ccallmax = heapq.nlargest(3, arr[:, 0])
@@ -203,31 +261,49 @@ def ccalloutliers(filename, resolution, sitessearched):
     mad7 = sum(i > 7 * mad for i in ccallmad)
     mad6 = sum(i > 6 * mad for i in ccallmad)
     mad5 = sum(i > 5 * mad for i in ccallmad)
-    print("number of CCall with CCall - median > 10 * MAD = "+str(mad10))
-    print("number of CCall with CCall - median >  9 * MAD = "+str(mad9))
-    print("number of CCall with CCall - median >  8 * MAD = "+str(mad8))
-    print("number of CCall with CCall - median >  7 * MAD = "+str(mad7))
-    print("number of CCall with CCall - median >  6 * MAD = "+str(mad6))
-    print("number of CCall with CCall - median >  5 * MAD = "+str(mad5))
-    print("Three largest CCall values: "+str(ccallmax))
-    allmad = open(projname + "_results/ccall.csv", 'a')
-    allmad.write(str(int(resolution) / 10) + "," + str(sitessearched) + "," +
-                 str(mad5) + "," + str(mad6) + "," + str(mad7) + "," +
-                 str(mad8) + "," + str(mad9) + "," + str(mad10) + "\n")
+    print("number of CCall with CCall - median > 10 * MAD = " + str(mad10))
+    print("number of CCall with CCall - median >  9 * MAD = " + str(mad9))
+    print("number of CCall with CCall - median >  8 * MAD = " + str(mad8))
+    print("number of CCall with CCall - median >  7 * MAD = " + str(mad7))
+    print("number of CCall with CCall - median >  6 * MAD = " + str(mad6))
+    print("number of CCall with CCall - median >  5 * MAD = " + str(mad5))
+    print("Three largest CCall values: " + str(ccallmax))
+    allmad = open(projname + "_results/ccall.csv", "a")
+    allmad.write(
+        str(int(resolution) / 10)
+        + ","
+        + str(sitessearched)
+        + ","
+        + str(mad5)
+        + ","
+        + str(mad6)
+        + ","
+        + str(mad7)
+        + ","
+        + str(mad8)
+        + ","
+        + str(mad9)
+        + ","
+        + str(mad10)
+        + "\n"
+    )
     allmad.close()
 
 
 def ccweakoutliers(filename, resolution, sitessearched):
-    df = pd.read_csv(filename, sep=',', names=['linebeg', 'TRY', 'CPUNO',
-                                               'CCALL', 'CCWEAK', 'CFOM',
-                                               'BEST', 'PATFOM'])
+    df = pd.read_csv(
+        filename,
+        sep=",",
+        names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM"],
+    )
     pd.DataFrame.drop(df, labels="linebeg", axis=1, inplace=True)
-    median = df['CCWEAK'].median()
-    arr = df[['CCALL', 'CCWEAK']].to_numpy()
+    median = df["CCWEAK"].median()
+    arr = df[["CCALL", "CCWEAK"]].to_numpy()
     cmean = arr.mean(axis=0)
     csd = arr.std(axis=0)
-    outliermask = (((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & ((arr[:, 1]) >
-                   (cmean[1] - (2 * csd[1]))))
+    outliermask = ((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & (
+        (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
+    )
     arr = arr[outliermask]
     mad = np.median(np.sqrt((arr[:, 1] - median) ** 2))
     ccweakmax = heapq.nlargest(3, arr[:, 1])
@@ -238,47 +314,64 @@ def ccweakoutliers(filename, resolution, sitessearched):
     mad7 = sum(i > 7 * mad for i in ccweakmad)
     mad6 = sum(i > 6 * mad for i in ccweakmad)
     mad5 = sum(i > 5 * mad for i in ccweakmad)
-    print("number of CCweak with CCweak - median > 10 * MAD = "+str(mad10))
-    print("number of CCweak with CCweak - median >  9 * MAD = "+str(mad9))
-    print("number of CCweak with CCweak - median >  8 * MAD = "+str(mad8))
-    print("number of CCweak with CCweak - median >  7 * MAD = "+str(mad7))
-    print("number of CCweak with CCweak - median >  6 * MAD = "+str(mad6))
-    print("number of CCweak with CCweak - median >  5 * MAD = "+str(mad5))
-    print("Three largest CCweak values: "+str(ccweakmax))
+    print("number of CCweak with CCweak - median > 10 * MAD = " + str(mad10))
+    print("number of CCweak with CCweak - median >  9 * MAD = " + str(mad9))
+    print("number of CCweak with CCweak - median >  8 * MAD = " + str(mad8))
+    print("number of CCweak with CCweak - median >  7 * MAD = " + str(mad7))
+    print("number of CCweak with CCweak - median >  6 * MAD = " + str(mad6))
+    print("number of CCweak with CCweak - median >  5 * MAD = " + str(mad5))
+    print("Three largest CCweak values: " + str(ccweakmax))
     print("")
-    allmad = open(projname + "_results/ccweak.csv", 'a') 
-    allmad.write(str(int(resolution) / 10) + "," + str(sitessearched) + "," +
-                 str(mad5) + "," + str(mad6) + "," + str(mad7) + "," +
-                 str(mad8) + "," + str(mad9) + "," + str(mad10) + "\n")
+    allmad = open(projname + "_results/ccweak.csv", "a")
+    allmad.write(
+        str(int(resolution) / 10)
+        + ","
+        + str(sitessearched)
+        + ","
+        + str(mad5)
+        + ","
+        + str(mad6)
+        + ","
+        + str(mad7)
+        + ","
+        + str(mad8)
+        + ","
+        + str(mad9)
+        + ","
+        + str(mad10)
+        + "\n"
+    )
     allmad.close()
 
 
 if not os.path.exists(projname + "_results"):
-    os.system("mkdir "+projname+"_results")
+    os.system("mkdir " + projname + "_results")
 i = highres
 while not (i >= lowres):
-    i2 = (i/10)
+    i2 = i / 10
     j = highsites
     while not (j <= (lowsites - 1)):
-        lstfile = os.path.join(path, projname + "/" + str(i) + "/" + str(j) +
-                               "/" + projname + "_fa.lst")
+        lstfile = os.path.join(
+            path, projname + "/" + str(i) + "/" + str(j) + "/" + projname + "_fa.lst"
+        )
         results(lstfile)
         j = j - 1
     i = i + 1
 
 # run cluster outlier analysis with optional cluster analysis
-if not os.path.exists(projname+"_figures"):
-    os.system("mkdir "+projname+"_figures")
+if not os.path.exists(projname + "_figures"):
+    os.system("mkdir " + projname + "_figures")
 i = highres
 while not (i >= lowres):
-    i2 = (i / 10)
+    i2 = i / 10
     j = highsites
     while not (j <= (lowsites - 1)):
         print("Results for " + str(i2) + "Å, " + str(j) + " sites:")
-        csvfile = os.path.join(path, projname + "_results/" + str(i) + "_" +
-                               str(j) + ".csv")
+        csvfile = os.path.join(
+            path, projname + "_results/" + str(i) + "_" + str(j) + ".csv"
+        )
         numbers = str(i) + "_" + str(j)
-        if clusteranalysis == 'y':
+        if clusteranalysis == "y":
             print("***Bayesian Gaussian Mixture Analysis***")
             clustering_distance(csvfile, numbers, i, j)
             print("***DBSCAN Analysis***")
@@ -295,34 +388,61 @@ while not (i >= lowres):
     i = i + 1
 
 # create and save top hits and madplot
-df = pd.read_csv(projname+"_results/ccall.csv", sep=',',
-                 names=['res', 'sites', 'mad5', 'mad6', 'mad7', 'mad8',
-                        'mad9', 'mad10'])
-df['score'] = ((df['mad5'] * 1) + (df['mad6'] * 4) + (df['mad7'] * 8) +
-               (df['mad8'] * 32) + (df['mad9'] * 128) + (df['mad10'] * 512))
-df.sort_values(by=['score'], ascending=False, inplace=True)
-top = df[['res', 'sites', 'score']]
+df = pd.read_csv(
+    projname + "_results/ccall.csv",
+    sep=",",
+    names=["res", "sites", "mad5", "mad6", "mad7", "mad8", "mad9", "mad10"],
+)
+df["score"] = (
+    (df["mad5"] * 1)
+    + (df["mad6"] * 4)
+    + (df["mad7"] * 8)
+    + (df["mad8"] * 32)
+    + (df["mad9"] * 128)
+    + (df["mad10"] * 512)
+)
+df.sort_values(by=["score"], ascending=False, inplace=True)
+top = df[["res", "sites", "score"]]
 top = df.head(10)
 top = top.reset_index(drop=True)
-print("""
+print(
+    """
 Here are the top 10 hits:
 
-""")
+"""
+)
 print(top)
-ax = plt.axes(projection='3d')
-ax.plot_trisurf(df['res'], df['sites'], df['score'], cmap='viridis',
-                edgecolor='none')
+ax = plt.axes(projection="3d")
+ax.plot_trisurf(df["res"], df["sites"], df["score"], cmap="viridis", edgecolor="none")
 madplot = plt.gcf()
-madplot.savefig(projname+"_figures/mad.png", dpi=600)
+madplot.savefig(projname + "_figures/mad.png", dpi=600)
 
-firstres, firstsites, secondres, secondsites = (top.iloc[[0], [0]].values[0],
-                                                top.iloc[[0], [1]].values[0],
-                                                top.iloc[[1], [0]].values[0],
-                                                top.iloc[[1], [1]].values[0])
-firstres, firstsites, secondres, secondsites = ((firstres*10).astype(np.int)).item(0), (firstsites.astype(np.int)).item(0), ((secondres*10).astype(np.int)).item(0), (secondsites.astype(np.int)).item(0)
+firstres, firstsites, secondres, secondsites = (
+    top.iloc[[0], [0]].values[0],
+    top.iloc[[0], [1]].values[0],
+    top.iloc[[1], [0]].values[0],
+    top.iloc[[1], [1]].values[0],
+)
+firstres, firstsites, secondres, secondsites = (
+    ((firstres * 10).astype(np.int)).item(0),
+    (firstsites.astype(np.int)).item(0),
+    ((secondres * 10).astype(np.int)).item(0),
+    (secondsites.astype(np.int)).item(0),
+)
 
-with open(path + "/" + projname + "/" + str(firstres) + "/" + str(firstsites) +
-          "/" + projname + "_fa.res", 'r') as infile:
+with open(
+    path
+    + "/"
+    + projname
+    + "/"
+    + str(firstres)
+    + "/"
+    + str(firstsites)
+    + "/"
+    + projname
+    + "_fa.res",
+    "r",
+) as infile:
     for line in infile:
         if line.startswith("TITL"):
             words = line.split()
@@ -331,12 +451,31 @@ with open(path + "/" + projname + "/" + str(firstres) + "/" + str(firstsites) +
 print("The space group has been identified as " + sg)
 phenixemma = open("phenix_emma.sh", "w")
 phenixemma.write("module load phenix \n")
-phenixemma.write("phenix.emma " + path + "/" + projname + "/" + str(firstres) +
-                 "/" + str(firstsites) + "/" + projname + "_fa.pdb " + path +
-                 "/" + projname + "/" + str(secondres) + "/" +
-                 str(secondsites) + "/" + projname +
-                 "_fa.pdb --tolerance=6 --space_group=" + sg +
-                 " 2>&1 | tee -a sagasu.log")
+phenixemma.write(
+    "phenix.emma "
+    + path
+    + "/"
+    + projname
+    + "/"
+    + str(firstres)
+    + "/"
+    + str(firstsites)
+    + "/"
+    + projname
+    + "_fa.pdb "
+    + path
+    + "/"
+    + projname
+    + "/"
+    + str(secondres)
+    + "/"
+    + str(secondsites)
+    + "/"
+    + projname
+    + "_fa.pdb --tolerance=6 --space_group="
+    + sg
+    + " 2>&1 | tee -a sagasu.log"
+)
 phenixemma.close()
-os.chmod('phenix_emma.sh', 0o775)
-os.system('./phenix_emma.sh')
+os.chmod("phenix_emma.sh", 0o775)
+os.system("./phenix_emma.sh")
