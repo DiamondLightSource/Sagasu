@@ -8,13 +8,40 @@ Created on Mon Mar 30 16:56:12 2020
 import sagasu_core
 import tkinter as tk
 import os
+import sys
+from mpl_toolkits.mplot3d import Axes3D
+import subprocess
+import shlex
+
+# =============================================================================
+# class IORedirector(object):
+#     '''A general class for redirecting I/O to this Text widget.'''
+#     def __init__(self, text_area):
+#         self.text_area = text_area
+# 
+# 
+# class StdoutRedirector(IORedirector):
+#     '''A class for redirecting stdout to this Text widget.'''
+#     def write(self, str):
+#         self.text_area.write(str, False)
+# 
+# 
+# def redirector(inputStr=""):
+#     import sys
+#     root = Toplevel()
+#     T = Text(root)
+#     sys.stdout = StdoutRedirector(T)
+#     T.pack()
+#     T.insert(END, inputStr)
+# =============================================================================
+
 
 os.system("module load mx")
-os.system("module load global/cluster")
+os.system("module load global/cluster") 
 path = os.getcwd()
 
-HEIGHT = 700
-WIDTH = 800
+HEIGHT = 1200
+WIDTH = 1000
 
 
 def run_sagasu(
@@ -49,13 +76,13 @@ def run_sagasu(
     )
     sagasu_core.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
     sagasu_core.run_sagasu_analysis(
-        projname, highres, lowres, highsites, lowsites, pathj, clusteranalysis
+        projname, highres, lowres, highsites, lowsites, path, clusteranalysis
     )
-    sagasu_core.tophits(proname, path)
+    sagasu_core.tophits(projname, path)
 
 
-height = 400
-width = 400
+height = 1000
+width = 1000
 
 root = tk.Tk()
 root.title("Sagasu - SHELXD Grid Search")
@@ -135,5 +162,14 @@ sub = tk.Button(
         cl.get(),
     ),
 ).grid(row=8, column=1, columnspan=3, sticky="E")
+
+output = tk.Frame(root, bg="white", bd=5)
+output.grid(row=2, column=1)
+
+scroll = tk.Scrollbar(output)
+text = tk.Text(output, height=20, width=100)
+
+scroll.pack(side=tk.RIGHT, fill=tk.Y)
+text.pack(side=tk.LEFT, fill=tk.Y)
 
 root.mainloop()

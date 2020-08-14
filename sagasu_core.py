@@ -18,6 +18,7 @@ import pickle
 from sklearn.cluster import DBSCAN
 import heapq
 from mpl_toolkits.mplot3d import Axes3D
+import shutil
 
 sns.set()
 
@@ -136,24 +137,16 @@ def run_sagasu_proc(
 
 
 def cleanup_prev(path, projname, highres, lowres, highsites, lowsites):
-    try:
-        os.remove(path + "/" + projname + "_results/ccweak.csv")
-    except ():
-        print("Could not delete ccweak.csv, shouldn't matter!")
-    try:
-        os.remove(path + "/" + projname + "_results/ccall.csv")
-    except ():
-        print("Could not delete ccall.csv, shouldn't matter!")
-    try:
-        os.remove(path + "/shelxd_job.sh")
-    except ():
-        print("Directory already clean...")
-    try:
-        os.remove(path + "/" + projname + "_results/clusterseparations.csv")
-    except ():
-        print("No cluster separations file found...")
+    resultspath = os.path.join(path, projname + "_results")
+    if os.path.exists(resultspath):
+        shutil.rmtree(resultspath)
     if not os.path.exists(projname + "_results"):
-        os.system("mkdir " + projname + "_results")
+        os.mkdir(path + "/" + projname + "_results")
+    figspath = os.path.join(path, projname + "_figures")
+    if os.path.exists(figspath):
+        shutil.rmtree(figspath)
+    if not os.path.exists(projname + "_figures"):
+        os.mkdir(path + "/" + projname + "_figures")
     i = highres
     while not (i >= lowres):
         j = highsites
@@ -251,7 +244,6 @@ def plot_gmm(projname, path, gmm, X, n_init, nums, label=True, ax=None):
         ax.scatter(X[:, 0], X[:, 1], c=labels, s=40, cmap="viridis", zorder=2)
     else:
         ax.scatter(X[:, 0], X[:, 1], s=40, zorder=2)
-    ax.axis("equal")
     w_factor = 0.2 / gmm.weights_.max()
     for pos, covar, w in zip(gmm.means_, gmm.covariances_, gmm.weights_):
         draw_ellipse(pos, covar, alpha=w * w_factor)
