@@ -19,6 +19,8 @@ from sklearn.cluster import DBSCAN
 import heapq
 from mpl_toolkits.mplot3d import Axes3D
 import shutil
+from pathlib import Path
+import subprocess
 
 sns.set()
 
@@ -91,35 +93,36 @@ def run_sagasu_proc(
     clust,
 ):
     if pro_or_ana == "p":
-        if not os.path.exists(projname):
-            os.system("mkdir " + projname)
+        Path(projname).mkdir(parents=True, exist_ok=True)
         i = highres
         while not (i >= lowres):
-            os.system("mkdir " + projname + "/" + str(i))
+            Path(os.path.join(projname, str(i))).mkdir(parents=True, exist_ok=True)
             i2 = i / 10
             j = highsites
             while not (j <= (lowsites - 1)):
-                os.system("mkdir " + projname + "/" + str(i) + "/" + str(j))
-                os.system(
-                    "cp " + insin + " ./" + projname + "/" + str(i) + "/" + str(j)
+                os.makedirs(os.path.join(projname, str(i), str(j)), exist_ok=True)
+                shutil.copy2(
+                insin, (os.path.join(projname, str(i), str(j)))
                 )
-                os.system(
-                    "cp " + hklin + " ./" + projname + "/" + str(i) + "/" + str(j)
+                shutil.copy2(
+                hklin, (os.path.join(projname, str(i), str(j)))
                 )
-                os.system(
-                    "cp shelxd_job.sh " + " ./" + projname + "/" + str(i) + "/" + str(j)
+                shutil.copy2(
+                "shelxd_job.sh", (os.path.join(projname, str(i), str(j)))
                 )
-                workpath = os.path.join(path, projname + "/" + str(i) + "/" + str(j))
+                workpath = os.path.join(path, projname, str(i), str(j))
                 f = os.path.join(
                     path,
-                    projname + "/" + str(i) + "/" + str(j) + "/" + projname + "_fa.ins",
+                    projname, str(i), str(j), projname + "_fa.ins",
                 )
                 replace(f, "FIND", "FIND " + str(j) + "\n")
                 replace(f, "SHEL", "SHEL 999 " + str(i2) + "\n")
                 replace(f, "NTRY", "NTRY " + str(ntry) + "\n")
                 statusofrun = statusofrun + "sag_" + str(i) + "_" + str(j) + ","
                 if clust == "l":
-                    os.system("cd " + workpath + "; ./shelxd_job.sh")
+                    os.chdir(workpath)
+                    shelxd_run = subprocess.run(["shelxd", projname], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    shelxd_run.stdout
                 elif clust == "c":
                     os.system(
                         "cd "
@@ -194,7 +197,7 @@ def run_sagasu_analysis(
     projname, highres, lowres, highsites, lowsites, path, clusteranalysis
 ):
     if not os.path.exists(projname + "_figures"):
-        os.system("mkdir " + projname + "_figures")
+        os.mkdir(projname + "_figures")
     i = highres
     while not (i >= lowres):
         i2 = i / 10
