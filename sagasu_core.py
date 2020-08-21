@@ -93,6 +93,7 @@ def run_sagasu_proc(
     clust,
 ):
     if pro_or_ana == "p":
+        os.chdir(path)
         Path(projname).mkdir(parents=True, exist_ok=True)
         i = highres
         while not (i >= lowres):
@@ -121,8 +122,11 @@ def run_sagasu_proc(
                 statusofrun = statusofrun + "sag_" + str(i) + "_" + str(j) + ","
                 if clust == "l":
                     os.chdir(workpath)
-                    shelxd_run = subprocess.run(["shelxd", projname], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    shelxd_run.stdout
+                    shelxdrun = subprocess.run(['shelxd', projname], stdout=subprocess.PIPE)
+                    print('returncode: ', shelxdrun.returncode)
+                    print(shelxdrun.stdout.decode('utf-8'))
+#                    os.system("./shelxd_job.sh")
+                    os.chdir(path)
                 elif clust == "c":
                     os.system(
                         "cd "

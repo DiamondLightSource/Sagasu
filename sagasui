@@ -47,6 +47,7 @@ WIDTH = 1000
 def run_sagasu(
     projname, pro_or_ana, highres, lowres, highsites, lowsites, fa_path, ntry, clust
 ):
+    os.chdir(path)
     clusteranalysis = "y"
     projname = projname
     pro_or_ana = str(pro_or_ana).lower()
