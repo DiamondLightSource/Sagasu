@@ -18,6 +18,7 @@ from sklearn.cluster import DBSCAN
 import heapq
 from mpl_toolkits.mplot3d import Axes3D
 import gc
+import shutil
 
 sns.set()
 gc.enable()
@@ -29,22 +30,18 @@ with open("inps.pkl", "rb") as f:
     )
 
 # clean up folders and files from previous runs
-try:
-    os.remove(path + "/" + projname + "_results/ccweak.csv")
-except ():
-    print("Could not delete ccweak.csv, shouldn't matter!")
-try:
-    os.remove(path + "/" + projname + "_results/ccall.csv")
-except ():
-    print("Could not delete ccall.csv, shouldn't matter!")
-try:
-    os.remove(path + "/shelxd_job.sh")
-except ():
-    print("Directory already clean...")
-try:
-    os.remove(path + "/" + projname + "_results/clusterseparations.csv")
-except ():
-    print("No cluster separations file found...")
+
+resultspath = os.path.join(path, projname + "_results")
+if os.path.exists(resultspath):
+    shutil.rmtree(resultspath)
+if not os.path.exists(projname + "_results"):
+    os.mkdir(path + "/" + projname + "_results")
+figspath = os.path.join(path, projname + "_figures")
+if os.path.exists(figspath):
+    shutil.rmtree(figspath)
+if not os.path.exists(projname + "_figures"):
+    os.mkdir(path + "/" + projname + "_figures")
+
 
 print(
     """Loading inputs from inps.pkl...
@@ -206,7 +203,7 @@ def analysis(filename, nums, a_res, a_sites):
     plt.scatter(
         df["CCALL"],
         df["CCWEAK"],
-        c=clustr.labels_.astype(float),
+        #c=clustr.labels_.astype(float),
         marker="+",
         s=50,
         alpha=0.5,
