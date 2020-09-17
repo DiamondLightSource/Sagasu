@@ -28,7 +28,7 @@ with open("inps.pkl", "rb") as f:
     path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis = pickle.load(
         f
     )
-
+clusteranalysis = 'y'
 # clean up folders and files from previous runs
 
 resultspath = os.path.join(path, projname + "_results")
@@ -190,6 +190,35 @@ def clustering_distance(csvfile, nums, i, j):
     plot_gmm(gmm, arr, ni, nums)
 
 
+# =============================================================================
+# def analysis(filename, nums, a_res, a_sites):
+#     df = pd.read_csv(
+#         filename,
+#         sep=",",
+#         names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM"],
+#     )
+#     ccallweak = df[["CCALL", "CCWEAK"]]
+#     clustr = DBSCAN(eps=0.7, min_samples=1, n_jobs=-1).fit(ccallweak)
+#     labels = len(set(clustr.labels_))
+#     print("DBSCAN found " + str(labels) + " cluster(s)")
+#     plt.scatter(
+#         df["CCALL"],
+#         df["CCWEAK"],
+#         #c=clustr.labels_.astype(float),
+#         marker="+",
+#         s=50,
+#         alpha=0.5,
+#     )
+#     plt.xlabel("CCALL")
+#     plt.ylabel("CCWEAK")
+#     plt.title("Resolution: " + str(a_res / 10) + "Å , Sites: " + str(a_sites))
+#     plt.draw()
+#     ccallvsccweak = plt.gcf()
+#     ccallvsccweak.savefig(path + "/" + projname + "_figures/" + nums + ".png", dpi=300)
+#     ccallvsccweak.clear()
+#     plt.close(ccallvsccweak)
+# =============================================================================
+    
 def analysis(filename, nums, a_res, a_sites):
     df = pd.read_csv(
         filename,
@@ -197,26 +226,17 @@ def analysis(filename, nums, a_res, a_sites):
         names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM"],
     )
     ccallweak = df[["CCALL", "CCWEAK"]]
-    clustr = DBSCAN(eps=0.7, min_samples=1, n_jobs=-1).fit(ccallweak)
-    labels = len(set(clustr.labels_))
-    print("DBSCAN found " + str(labels) + " cluster(s)")
     plt.scatter(
         df["CCALL"],
         df["CCWEAK"],
-        #c=clustr.labels_.astype(float),
         marker="+",
-        s=50,
-        alpha=0.5,
     )
-    plt.xlabel("CCALL")
-    plt.ylabel("CCWEAK")
-    plt.title("Resolution: " + str(a_res / 10) + "Å , Sites: " + str(a_sites))
+    plt.axis('off')
     plt.draw()
     ccallvsccweak = plt.gcf()
-    ccallvsccweak.savefig(path + "/" + projname + "_figures/" + nums + ".png", dpi=300)
+    ccallvsccweak.savefig(path + "/" + projname + "_figures/" + nums + ".png", dpi=500, bbox_inches=0)
     ccallvsccweak.clear()
     plt.close(ccallvsccweak)
-
 
 def analysis_2(filename, nums, a_res, a_sites):
     df = pd.read_csv(

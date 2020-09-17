@@ -228,6 +228,53 @@ def run_sagasu_analysis(
         i = i + 1
 
 
+def for_ML_analysis(
+    projname, highres, lowres, highsites, lowsites, path, clusteranalysis
+):
+    if not os.path.exists(projname + "_figures"):
+        os.mkdir(projname + "_figures")
+    i = highres
+    while not (i >= lowres):
+        i2 = i / 10
+        j = highsites
+        while not (j <= (lowsites - 1)):
+            print("Results for " + str(i2) + "Å, " + str(j) + " sites:")
+            csvfile = os.path.join(
+                path, projname + "_results/" + str(i) + "_" + str(j) + ".csv"
+            )
+            numbers = str(i) + "_" + str(j)
+            if clusteranalysis == "y":
+                print("***Generating Hexplots***")
+                plot_for_ML(csvfile, numbers, i, j)
+            else:
+                print("No cluster analysis requested")
+            print("***Outlier Analysis***")
+            ccalloutliers(path, projname, csvfile, i, j)
+            ccweakoutliers(path, projname, csvfile, i, j)
+            j = j - 1
+        i = i + 1
+
+
+def plot_for_ML(filename, nums, a_res, a_sites):
+    df = pd.read_csv(
+        filename,
+        sep=",",
+        names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM"],
+    )
+    ccallweak = df[["CCALL", "CCWEAK"]]
+    plt.scatter(
+        df["CCALL"],
+        df["CCWEAK"],
+        marker="o",
+    )
+    plt.axis('off')
+    plt.draw()
+    ccallvsccweak = plt.gcf()
+    ccallvsccweak.savefig(path + "/" + projname + "_figures/" + projname + "_" + nums + ".png", dpi=500, bbox_inches=0)
+    ccallvsccweak.clear()
+    plt.close(ccallvsccweak)
+
+
 def draw_ellipse(position, covariance, ax=None, **kwargs):
     """Draw an ellipse with a given position and covariance"""
     ax = ax or plt.gca()

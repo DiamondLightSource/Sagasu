@@ -195,15 +195,20 @@ Done. Nothing happened? Make sure you pressed l or c at cluster question.
 
           """
     )
+if clust == "l":
+    os.system("cd " + path)
+    os.system("python ./sagasu_analysis")
 
-shelxjob = open("wait.sh", "w")
-shelxjob.write("module load python/3 \n")
-shelxjob.write("/home/i23user/bin/shelxgrid/sagasu_analysis 2>&1 | tee -a sagasu.log")
-shelxjob.close()
-os.chmod("wait.sh", 0o775)
-if pro_or_ana == "a":
-    os.system("./wait.sh")
-if pro_or_ana == "p":
-    os.system(
-        'qsub -hold_jid "sag_*" -N sagasuanalysis -P i23 -q low.q -l h_vmem=4G -pe smp 20 -cwd ./wait.sh'
-    )
+# =============================================================================
+# shelxjob = open("wait.sh", "w")
+# shelxjob.write("module load python/3 \n")
+# shelxjob.write("/home/i23user/bin/shelxgrid/sagasu_analysis 2>&1 | tee -a sagasu.log")
+# shelxjob.close()
+# os.chmod("wait.sh", 0o775)
+# if pro_or_ana == "a":
+#     os.system("./wait.sh")
+# if pro_or_ana == "p":
+#     os.system(
+#         'qsub -hold_jid "sag_*" -N sagasuanalysis -P i23 -q low.q -l h_vmem=4G -pe smp 20 -cwd ./wait.sh'
+#     )
+# =============================================================================
