@@ -245,7 +245,7 @@ def for_ML_analysis(
             numbers = str(i) + "_" + str(j)
             if clusteranalysis == "y":
                 print("***Generating Hexplots***")
-                plot_for_ML(csvfile, numbers, i, j)
+                plot_for_ML(path, projname, csvfile, numbers, i, j)
             else:
                 print("No cluster analysis requested")
             print("***Outlier Analysis***")
@@ -255,7 +255,7 @@ def for_ML_analysis(
         i = i + 1
 
 
-def plot_for_ML(filename, nums, a_res, a_sites):
+def plot_for_ML(path, projname, filename, nums, a_res, a_sites):
     df = pd.read_csv(
         filename,
         sep=",",
