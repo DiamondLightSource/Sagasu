@@ -70,7 +70,7 @@ def shelx_write(projname):
 
 def replace(file, pattern, subst):
     file_handle = open(file, "r")
-    file_string = file_handle.read()mhhh
+    file_string = file_handle.read()
     file_handle.close()
     file_string = re.sub(pattern, subst, file_string)
     file_handle = open(file, "w")
