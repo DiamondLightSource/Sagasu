@@ -70,7 +70,7 @@ def shelx_write(projname):
 
 def replace(file, pattern, subst):
     file_handle = open(file, "r")
-    file_string = file_handle.read()
+    file_string = file_handle.read()mhhh
     file_handle.close()
     file_string = re.sub(pattern, subst, file_string)
     file_handle = open(file, "w")
@@ -131,7 +131,7 @@ def run_sagasu_proc(
                     os.system(
                         "cd "
                         + workpath
-                        + "; qsub -P i23 -q low.q -l h_vmem=4G -N sag_"
+                        + "; qsub -P i23 -q low.q -l h_vmem=1G -N sag_"
                         + str(i)
                         + "_"
                         + str(j)
