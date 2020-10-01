@@ -7,6 +7,7 @@ Created on Thu Sep 17 16:53:17 2020
 """
 import os
 import sagasu_core
+import pickle
 
 pro_or_ana = str(input("p or a: ").lower())
 path = os.getcwd()
@@ -35,6 +36,7 @@ if pro_or_ana == 'p':
 os.chdir(path)
 
 if pro_or_ana == 'p':
+    print("Processing mode selected")
     sagasu_core.writepickle(path,
                             projname,
                             lowres,
@@ -60,15 +62,16 @@ if pro_or_ana == 'p':
                                 )
 
 if pro_or_ana == 'a':
-    sagasu_core.readpickle(path,
-                           projname,
-                           lowres,
-                           highres,
-                           lowsites,
-                           highsites,
-                           ntry,
-                           clusteranalysis
-                           )
+    print("Analysis mode selected")
+    with open("inps.pkl", "rb") as f:
+                (path,
+                projname,
+                lowres,
+                highres,
+                lowsites,
+                highsites,
+                ntry,
+                clusteranalysis) = pickle.load(f)
     sagasu_core.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
     sagasu_core.for_ML_analysis(
         projname, highres, lowres, highsites, lowsites, path, clusteranalysis
