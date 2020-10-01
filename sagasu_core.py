@@ -48,7 +48,7 @@ def readpickle(
     path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis
 ):
     with open("inps.pkl", "rb") as f:
-        (
+        ([
             path,
             projname,
             lowres,
@@ -57,7 +57,7 @@ def readpickle(
             highsites,
             ntry,
             clusteranalysis,
-        ) = pickle.load(f)
+        ]) = pickle.load(f)
 
 
 def shelx_write(projname):

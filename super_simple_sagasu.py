@@ -21,7 +21,6 @@ if pro_or_ana == 'p':
     ntry = input("trys: ")
     clust = 'c'
     clusteranalysis = "y"
-    projname = projname
     pro_or_ana = str(pro_or_ana).lower()
     highres = int((10 * float(highres)))
     lowres = int((10 * float(lowres)))
