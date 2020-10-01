@@ -131,7 +131,7 @@ def run_sagasu_proc(
                     os.system(
                         "cd "
                         + workpath
-                        + "; qsub -P i23 -q low.q -l h_vmem=1G -N sag_"
+                        + "; qsub -P i23 -q low.q -l h_vmem=5G -N sag_"
                         + str(i)
                         + "_"
                         + str(j)
