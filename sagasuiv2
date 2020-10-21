@@ -938,8 +938,6 @@ class Ui_Sagasui(object):
         self.retranslateUi(Sagasui)
         QtCore.QMetaObject.connectSlotsByName(Sagasui)
 
-    def run_sagasu_clicked(self):
-        
 
     def retranslateUi(self, Sagasui):
         _translate = QtCore.QCoreApplication.translate
