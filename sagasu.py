@@ -8,18 +8,18 @@ import sagasu_core
 import pickle
 import gridmap as gm
 
-pro_or_ana = str(input("p or a: ").lower())
+pro_or_ana = str(input("Would you like to run (p)rocessing and analysis or just (a)nalysis: ").lower())
 path = os.getcwd()
 
 if pro_or_ana == 'p':
     projname = input("Name of project (SHELX prefix): ")
     fa_path = input("Path to SHELXC outputs: ")
-    highres = input("highres: ")
-    lowres = input("lowres: ")
-    highsites = input("highsites: ")
-    lowsites = input("lowsites: ")
-    ntry = input("trys: ")
-    clust = 'c'
+    highres = input("High resolution cutoff for grid: ")
+    lowres = input("Low resolution cutoff for grid: ")
+    highsites = input("Maximum number of sites to search: ")
+    lowsites = input("Minimum number of sites to search: ")
+    ntry = input("Number of trials: ")
+    clust = str(input("Run on (c)luster or (l)ocal machine? ")).lower()
     clusteranalysis = "y"
     pro_or_ana = str(pro_or_ana).lower()
     highres = int((10 * float(highres)))
@@ -35,7 +35,7 @@ if pro_or_ana == 'p':
 os.chdir(path)
 
 if pro_or_ana == 'p':
-    print("Processing mode selected")
+    print("Processing started")
     sagasu_core.writepickle(path,
                             projname,
                             lowres,
