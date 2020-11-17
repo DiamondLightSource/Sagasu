@@ -8,3 +8,4 @@ shelxd_job.sh
 madanalysis.py
 *.png
 *.csv
+.vscode/settings.json
