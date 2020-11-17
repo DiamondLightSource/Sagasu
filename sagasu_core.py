@@ -21,8 +21,32 @@ from mpl_toolkits.mplot3d import Axes3D
 import shutil
 from pathlib import Path
 import subprocess
+import time
+import tqdm
 
 sns.set()
+
+
+def get_input():
+    projname = input("Name of project (SHELX prefix): ")
+    fa_path = input("Path to SHELXC outputs: ")
+    highres = input("High resolution cutoff for grid: ")
+    lowres = input("Low resolution cutoff for grid: ")
+    highsites = input("Maximum number of sites to search: ")
+    lowsites = input("Minimum number of sites to search: ")
+    ntry = input("Number of trials: ")
+    clust = str(input("Run on (c)luster or (l)ocal machine? ")).lower()
+    clusteranalysis = "y"
+    pro_or_ana = str(pro_or_ana).lower()
+    highres = int((10 * float(highres)))
+    lowres = int((10 * float(lowres)))
+    highsites = int(highsites)
+    lowsites = int(lowsites)
+    insin = os.path.join(fa_path, projname + "_fa.ins")
+    hklin = os.path.join(fa_path, projname + "_fa.hkl")
+    ntry = int(ntry)
+    statusofrun = "-hold_jid "
+    clust = str(clust).lower()
 
 
 def writepickle(
@@ -48,16 +72,35 @@ def readpickle(
     path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis
 ):
     with open("inps.pkl", "rb") as f:
-        ([
-            path,
-            projname,
-            lowres,
-            highres,
-            lowsites,
-            highsites,
-            ntry,
-            clusteranalysis,
-        ]) = pickle.load(f)
+        (
+            [
+                path,
+                projname,
+                lowres,
+                highres,
+                lowsites,
+                highsites,
+                ntry,
+                clusteranalysis,
+            ]
+        ) = pickle.load(f)
+
+
+def qstat_progress(lowres, highres, lowsites, highsites):
+    runs = (((lowres - 1) - highres)) * (highsites - lowsites)
+    q = subprocess.Popen("qstat", stdout=subprocess.PIPE)
+    q = len(q.stdout.read())
+    print("")
+    pbar = tqdm(desc="Jobs finished", total=int(runs), dynamic_ncols=True)
+    while q > 2:
+        t = subprocess.Popen("qstat", stdout=subprocess.PIPE)
+        q = len(t.stdout.readlines())
+        l = runs - (q - 2)
+        pbar.n = int(l)
+        pbar.refresh()
+        time.sleep(2)
+    else:
+        print("\nDone processing, moving on to analysis")
 
 
 def shelx_write(projname):
@@ -102,19 +145,16 @@ def run_sagasu_proc(
             j = highsites
             while not (j <= (lowsites - 1)):
                 os.makedirs(os.path.join(projname, str(i), str(j)), exist_ok=True)
-                shutil.copy2(
-                insin, (os.path.join(projname, str(i), str(j)))
-                )
-                shutil.copy2(
-                hklin, (os.path.join(projname, str(i), str(j)))
-                )
-                shutil.copy2(
-                "shelxd_job.sh", (os.path.join(projname, str(i), str(j)))
-                )
+                shutil.copy2(insin, (os.path.join(projname, str(i), str(j))))
+                shutil.copy2(hklin, (os.path.join(projname, str(i), str(j))))
+                shutil.copy2("shelxd_job.sh", (os.path.join(projname, str(i), str(j))))
                 workpath = os.path.join(path, projname, str(i), str(j))
                 f = os.path.join(
                     path,
-                    projname, str(i), str(j), projname + "_fa.ins",
+                    projname,
+                    str(i),
+                    str(j),
+                    projname + "_fa.ins",
                 )
                 replace(f, "FIND", "FIND " + str(j) + "\n")
                 replace(f, "SHEL", "SHEL 999 " + str(i2) + "\n")
@@ -122,10 +162,12 @@ def run_sagasu_proc(
                 statusofrun = statusofrun + "sag_" + str(i) + "_" + str(j) + ","
                 if clust == "l":
                     os.chdir(workpath)
-                    shelxdrun = subprocess.run(['shelxd', projname], stdout=subprocess.PIPE)
-                    print('returncode: ', shelxdrun.returncode)
-                    print(shelxdrun.stdout.decode('utf-8'))
-#                    os.system("./shelxd_job.sh")
+                    shelxdrun = subprocess.run(
+                        ["shelxd", projname], stdout=subprocess.PIPE
+                    )
+                    print("returncode: ", shelxdrun.returncode)
+                    print(shelxdrun.stdout.decode("utf-8"))
+                    #                    os.system("./shelxd_job.sh")
                     os.chdir(path)
                 elif clust == "c":
                     os.system(
@@ -267,10 +309,14 @@ def plot_for_ML(path, projname, filename, nums, a_res, a_sites):
         df["CCWEAK"],
         marker="o",
     )
-    plt.axis('off')
+    plt.axis("off")
     plt.draw()
     ccallvsccweak = plt.gcf()
-    ccallvsccweak.savefig(path + "/" + projname + "_figures/" + projname + "_" + nums + ".png", dpi=500, bbox_inches=0)
+    ccallvsccweak.savefig(
+        path + "/" + projname + "_figures/" + projname + "_" + nums + ".png",
+        dpi=500,
+        bbox_inches=0,
+    )
     ccallvsccweak.clear()
     plt.close(ccallvsccweak)
 

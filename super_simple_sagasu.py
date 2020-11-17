@@ -12,7 +12,7 @@ import pickle
 pro_or_ana = str(input("p or a: ").lower())
 path = os.getcwd()
 
-if pro_or_ana == 'p':
+if pro_or_ana == "p":
     projname = input("proj: ")
     fa_path = input("hkl2map path: ")
     highres = input("highres: ")
@@ -20,7 +20,7 @@ if pro_or_ana == 'p':
     highsites = input("highsites: ")
     lowsites = input("lowsites: ")
     ntry = input("trys: ")
-    clust = 'c'
+    clust = "c"
     clusteranalysis = "y"
     pro_or_ana = str(pro_or_ana).lower()
     highres = int((10 * float(highres)))
@@ -35,44 +35,41 @@ if pro_or_ana == 'p':
 
 os.chdir(path)
 
-if pro_or_ana == 'p':
+if pro_or_ana == "p":
     print("Processing mode selected")
-    sagasu_core.writepickle(path,
-                            projname,
-                            lowres,
-                            highres,
-                            lowsites,
-                            highsites,
-                            ntry,
-                            clusteranalysis
-                            )
+    sagasu_core.writepickle(
+        path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis
+    )
     sagasu_core.shelx_write(projname)
-    sagasu_core.run_sagasu_proc(pro_or_ana,
-                                projname,
-                                highres,
-                                lowres,
-                                highsites,
-                                lowsites,
-                                insin,
-                                hklin,
-                                path,
-                                ntry,
-                                statusofrun,
-                                clust
-                                )
+    sagasu_core.run_sagasu_proc(
+        pro_or_ana,
+        projname,
+        highres,
+        lowres,
+        highsites,
+        lowsites,
+        insin,
+        hklin,
+        path,
+        ntry,
+        statusofrun,
+        clust,
+    )
 
-if pro_or_ana == 'a':
+if pro_or_ana == "a":
     print("Analysis mode selected")
     with open("inps.pkl", "rb") as f:
-                (path,
-                projname,
-                lowres,
-                highres,
-                lowsites,
-                highsites,
-                ntry,
-                clusteranalysis) = pickle.load(f)
+        (
+            path,
+            projname,
+            lowres,
+            highres,
+            lowsites,
+            highsites,
+            ntry,
+            clusteranalysis,
+        ) = pickle.load(f)
     sagasu_core.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
     sagasu_core.for_ML_analysis(
         projname, highres, lowres, highsites, lowsites, path, clusteranalysis
-        )
+    )
