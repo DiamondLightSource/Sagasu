@@ -12,14 +12,23 @@ pro_or_ana = str(
         "Would you like to run (p)rocessing and analysis or just (a)nalysis: "
     ).lower()
 )
-path = os.getcwd()
 
-os.chdir(path)
 
 if pro_or_ana == "p":
     sagasu_core.get_input()
-    sagasu_core.writepickle(
-        path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis
+    sagasu_core.readpickle(
+        path,
+        projname,
+        lowres,
+        highres,
+        lowsites,
+        highsites,
+        ntry,
+        clusteranalysis,
+        clust,
+        insin,
+        hklin,
+        fa_path,
     )
     sagasu_core.shelx_write(projname)
     sagasu_core.run_sagasu_proc(
@@ -36,7 +45,7 @@ if pro_or_ana == "p":
         statusofrun,
         clust,
     )
-    if clust == 'c':
+    if clust == "c":
         sagasu_core.qstat_progress(lowres, highres, lowsites, highsites)
     else:
         print("Processing finished.")

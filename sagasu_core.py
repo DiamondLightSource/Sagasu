@@ -28,28 +28,47 @@ sns.set()
 
 
 def get_input():
+    path = os.getcwd()
     projname = input("Name of project (SHELX prefix): ")
     fa_path = input("Path to SHELXC outputs: ")
-    highres = input("High resolution cutoff for grid: ")
-    lowres = input("Low resolution cutoff for grid: ")
-    highsites = input("Maximum number of sites to search: ")
-    lowsites = input("Minimum number of sites to search: ")
-    ntry = input("Number of trials: ")
+    highres = int(10 * float(input("High resolution cutoff for grid: ")))
+    lowres = int(10 * float(input("Low resolution cutoff for grid: ")))
+    highsites = int(input("Maximum number of sites to search: "))
+    lowsites = int(input("Minimum number of sites to search: "))
+    ntry = int(input("Number of trials: "))
     clust = str(input("Run on (c)luster or (l)ocal machine? c/l ")).lower()
-    clusteranalysis = str('Run cluster analysis after (time consuming)? y/n ').lower()
-    highres = int((10 * float(highres)))
-    lowres = int((10 * float(lowres)))
-    highsites = int(highsites)
-    lowsites = int(lowsites)
+    clusteranalysis = str("Run cluster analysis after (time consuming)? y/n ").lower()
     insin = os.path.join(fa_path, projname + "_fa.ins")
     hklin = os.path.join(fa_path, projname + "_fa.hkl")
-    ntry = int(ntry)
-    statusofrun = "-hold_jid "
-    clust = str(clust).lower()
+    writepickle(
+        path,
+        projname,
+        lowres,
+        highres,
+        lowsites,
+        highsites,
+        ntry,
+        clusteranalysis,
+        clust,
+        insin,
+        hklin,
+        fa_path,
+    )
 
 
 def writepickle(
-    path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis
+    path,
+    projname,
+    lowres,
+    highres,
+    lowsites,
+    highsites,
+    ntry,
+    clusteranalysis,
+    clust,
+    insin,
+    hklin,
+    fa_path,
 ):
     with open("inps.pkl", "wb") as f:
         pickle.dump(
@@ -62,13 +81,28 @@ def writepickle(
                 highsites,
                 ntry,
                 clusteranalysis,
+                clust,
+                insin,
+                hklin,
+                fa_path,
             ],
             f,
         )
 
 
 def readpickle(
-    path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis
+    path,
+    projname,
+    lowres,
+    highres,
+    lowsites,
+    highsites,
+    ntry,
+    clusteranalysis,
+    clust,
+    insin,
+    hklin,
+    fa_path,
 ):
     with open("inps.pkl", "rb") as f:
         (
@@ -81,6 +115,10 @@ def readpickle(
                 highsites,
                 ntry,
                 clusteranalysis,
+                clust,
+                insin,
+                hklin,
+                fa_path,
             ]
         ) = pickle.load(f)
 
@@ -148,13 +186,7 @@ def run_sagasu_proc(
                 shutil.copy2(hklin, (os.path.join(projname, str(i), str(j))))
                 shutil.copy2("shelxd_job.sh", (os.path.join(projname, str(i), str(j))))
                 workpath = os.path.join(path, projname, str(i), str(j))
-                f = os.path.join(
-                    path,
-                    projname,
-                    str(i),
-                    str(j),
-                    projname + "_fa.ins",
-                )
+                f = os.path.join(path, projname, str(i), str(j), projname + "_fa.ins")
                 replace(f, "FIND", "FIND " + str(j) + "\n")
                 replace(f, "SHEL", "SHEL 999 " + str(i2) + "\n")
                 replace(f, "NTRY", "NTRY " + str(ntry) + "\n")
@@ -303,11 +335,7 @@ def plot_for_ML(path, projname, filename, nums, a_res, a_sites):
         names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM"],
     )
     ccallweak = df[["CCALL", "CCWEAK"]]
-    plt.scatter(
-        df["CCALL"],
-        df["CCWEAK"],
-        marker="o",
-    )
+    plt.scatter(df["CCALL"], df["CCWEAK"], marker="o")
     plt.axis("off")
     plt.draw()
     ccallvsccweak = plt.gcf()
