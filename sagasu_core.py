@@ -35,9 +35,8 @@ def get_input():
     highsites = input("Maximum number of sites to search: ")
     lowsites = input("Minimum number of sites to search: ")
     ntry = input("Number of trials: ")
-    clust = str(input("Run on (c)luster or (l)ocal machine? ")).lower()
-    clusteranalysis = "y"
-    pro_or_ana = str(pro_or_ana).lower()
+    clust = str(input("Run on (c)luster or (l)ocal machine? c/l ")).lower()
+    clusteranalysis = str('Run cluster analysis after (time consuming)? y/n ').lower()
     highres = int((10 * float(highres)))
     lowres = int((10 * float(lowres)))
     highsites = int(highsites)

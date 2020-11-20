@@ -36,7 +36,10 @@ if pro_or_ana == "p":
         statusofrun,
         clust,
     )
-    sagasu_core.qstat_progress(lowres, highres, lowsites, highsites)
+    if clust == 'c':
+        sagasu_core.qstat_progress(lowres, highres, lowsites, highsites)
+    else:
+        print("Processing finished.")
 
 if pro_or_ana == "a" or "p":
     print("Analysis running...")

@@ -20,7 +20,7 @@ if pro_or_ana == "p":
     highsites = input("highsites: ")
     lowsites = input("lowsites: ")
     ntry = input("trys: ")
-    clust = "c"
+    clust = input("Run on (c)luster or (l)ocal: ")
     clusteranalysis = "y"
     pro_or_ana = str(pro_or_ana).lower()
     highres = int((10 * float(highres)))
