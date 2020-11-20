@@ -28,7 +28,6 @@ sns.set()
 
 
 def get_input():
-    path = os.getcwd()
     projname = input("Name of project (SHELX prefix): ")
     fa_path = input("Path to SHELXC outputs: ")
     highres = int(10 * float(input("High resolution cutoff for grid: ")))
@@ -41,7 +40,6 @@ def get_input():
     insin = os.path.join(fa_path, projname + "_fa.ins")
     hklin = os.path.join(fa_path, projname + "_fa.hkl")
     writepickle(
-        path,
         projname,
         lowres,
         highres,
@@ -52,12 +50,10 @@ def get_input():
         clust,
         insin,
         hklin,
-        fa_path,
     )
 
 
 def writepickle(
-    path,
     projname,
     lowres,
     highres,
@@ -68,12 +64,10 @@ def writepickle(
     clust,
     insin,
     hklin,
-    fa_path,
 ):
     with open("inps.pkl", "wb") as f:
         pickle.dump(
             [
-                path,
                 projname,
                 lowres,
                 highres,
@@ -84,14 +78,12 @@ def writepickle(
                 clust,
                 insin,
                 hklin,
-                fa_path,
             ],
             f,
         )
 
 
 def readpickle(
-    path,
     projname,
     lowres,
     highres,
@@ -102,12 +94,10 @@ def readpickle(
     clust,
     insin,
     hklin,
-    fa_path,
 ):
     with open("inps.pkl", "rb") as f:
         (
             [
-                path,
                 projname,
                 lowres,
                 highres,
@@ -118,7 +108,6 @@ def readpickle(
                 clust,
                 insin,
                 hklin,
-                fa_path,
             ]
         ) = pickle.load(f)
 

@@ -3,9 +3,11 @@
 """
 @author: Chris
 """
-import os
 import sagasu_core
 import pickle
+import os
+
+path = os.getcwd()
 
 pro_or_ana = str(
     input(
@@ -13,23 +15,22 @@ pro_or_ana = str(
     ).lower()
 )
 
-
 if pro_or_ana == "p":
     sagasu_core.get_input()
-    sagasu_core.readpickle(
-        path,
-        projname,
-        lowres,
-        highres,
-        lowsites,
-        highsites,
-        ntry,
-        clusteranalysis,
-        clust,
-        insin,
-        hklin,
-        fa_path,
-    )
+    if os.path.exists(os.path.join(path, "inps.pkl")):
+        with open("inps.pkl", "rb") as f:
+            (
+                projname,
+                lowres,
+                highres,
+                lowsites,
+                highsites,
+                ntry,
+                clusteranalysis,
+                clust,
+                insin,
+                hklin,
+            ) = pickle.load(f)
     sagasu_core.shelx_write(projname)
     sagasu_core.run_sagasu_proc(
         pro_or_ana,
