@@ -38,7 +38,16 @@ os.chdir(path)
 if pro_or_ana == "p":
     print("Processing mode selected")
     sagasu_core.writepickle(
-        path, projname, lowres, highres, lowsites, highsites, ntry, clusteranalysis
+                projname,
+                lowres,
+                highres,
+                lowsites,
+                highsites,
+                ntry,
+                clusteranalysis,
+                clust,
+                insin,
+                hklin
     )
     sagasu_core.shelx_write(projname)
     sagasu_core.run_sagasu_proc(
@@ -60,16 +69,18 @@ if pro_or_ana == "a":
     print("Analysis mode selected")
     with open("inps.pkl", "rb") as f:
         (
-            path,
-            projname,
-            lowres,
-            highres,
-            lowsites,
-            highsites,
-            ntry,
-            clusteranalysis,
+                projname,
+                lowres,
+                highres,
+                lowsites,
+                highsites,
+                ntry,
+                clusteranalysis,
+                clust,
+                insin,
+                hklin,
         ) = pickle.load(f)
     sagasu_core.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
     sagasu_core.for_ML_analysis(
-        projname, highres, lowres, highsites, lowsites, path, clusteranalysis
+        projname, highres, lowres, highsites, lowsites, path, 'y'
     )

@@ -8,7 +8,7 @@ import pickle
 import os
 
 path = os.getcwd()
-
+print("You are here:", path)
 pro_or_ana = str(
     input(
         "Would you like to run (p)rocessing and analysis or just (a)nalysis: "
@@ -43,7 +43,7 @@ if pro_or_ana == "p":
         hklin,
         path,
         ntry,
-        clust,
+        clust
     )
     if clust == "c":
         sagasu_core.qstat_progress(lowres, highres, lowsites, highsites)
@@ -55,14 +55,16 @@ if pro_or_ana == "a" or "p":
     if os.path.exists(os.path.join(path, "inps.pkl")):
         with open("inps.pkl", "rb") as f:
             (
-                path,
-                projname,
+               projname,
                 lowres,
                 highres,
                 lowsites,
                 highsites,
                 ntry,
                 clusteranalysis,
+                clust,
+                insin,
+                hklin,
             ) = pickle.load(f)
         sagasu_core.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
         sagasu_core.run_sagasu_analysis(

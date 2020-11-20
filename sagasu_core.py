@@ -22,7 +22,7 @@ import shutil
 from pathlib import Path
 import subprocess
 import time
-import tqdm
+from tqdm import tqdm
 
 sns.set()
 
@@ -158,13 +158,15 @@ def run_sagasu_proc(
     hklin,
     path,
     ntry,
-    statusofrun,
     clust,
 ):
     if pro_or_ana == "p":
         os.chdir(path)
         Path(projname).mkdir(parents=True, exist_ok=True)
         i = highres
+        if clust == 'l':
+            tot = ((lowres - highres) * ((highsites + 1) - lowsites))
+            pbar = tqdm(desc="SHELXD", total=tot, dynamic_ncols=True)
         while not (i >= lowres):
             Path(os.path.join(projname, str(i))).mkdir(parents=True, exist_ok=True)
             i2 = i / 10
@@ -179,15 +181,15 @@ def run_sagasu_proc(
                 replace(f, "FIND", "FIND " + str(j) + "\n")
                 replace(f, "SHEL", "SHEL 999 " + str(i2) + "\n")
                 replace(f, "NTRY", "NTRY " + str(ntry) + "\n")
-                statusofrun = statusofrun + "sag_" + str(i) + "_" + str(j) + ","
                 if clust == "l":
                     os.chdir(workpath)
                     shelxdrun = subprocess.run(
-                        ["shelxd", projname], stdout=subprocess.PIPE
+                        ["shelxd", projname + '_fa'], stdout=subprocess.PIPE
                     )
-                    print("returncode: ", shelxdrun.returncode)
-                    print(shelxdrun.stdout.decode("utf-8"))
-                    #                    os.system("./shelxd_job.sh")
+                    #print("returncode: ", shelxdrun.returncode)
+                    #print(shelxdrun.stdout.decode("utf-8"))
+                    pbar.update(1)
+                    pbar.refresh()
                     os.chdir(path)
                 elif clust == "c":
                     os.system(
