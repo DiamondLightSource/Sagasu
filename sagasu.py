@@ -43,7 +43,6 @@ if pro_or_ana == "p":
         hklin,
         path,
         ntry,
-        statusofrun,
         clust,
     )
     if clust == "c":
