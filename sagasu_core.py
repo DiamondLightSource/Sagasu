@@ -3,7 +3,7 @@
 """
 Created on Fri Mar 13 14:48:45 2020
 @author: Christian M. Orr
-"""
+""" 
 
 import os
 import re
@@ -34,9 +34,9 @@ def get_input():
     lowres = int(10 * float(input("Low resolution cutoff for grid: ")))
     highsites = int(input("Maximum number of sites to search: "))
     lowsites = int(input("Minimum number of sites to search: "))
-    ntry = int(input("Number of trials: "))
+    ntry = int(input("Number of trials FPIUCWSNVPWSB: "))
+    clusteranalysis = str(input("Run cluster analysis after (time consuming)? y/n ")).lower()
     clust = str(input("Run on (c)luster or (l)ocal machine? c/l ")).lower()
-    clusteranalysis = str("Run cluster analysis after (time consuming)? y/n ").lower()
     insin = os.path.join(fa_path, projname + "_fa.ins")
     hklin = os.path.join(fa_path, projname + "_fa.hkl")
     writepickle(

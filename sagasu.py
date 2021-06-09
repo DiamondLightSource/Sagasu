@@ -6,6 +6,8 @@
 import sagasu_core
 import pickle
 import os
+from multiprocessing import Pool
+
 
 path = os.getcwd()
 print("You are here:", path)
@@ -14,6 +16,7 @@ pro_or_ana = str(
         "Would you like to run (p)rocessing and analysis or just (a)nalysis: "
     ).lower()
 )
+
 
 if pro_or_ana == "p":
     sagasu_core.get_input()
@@ -66,6 +69,10 @@ if pro_or_ana == "a" or "p":
                 insin,
                 hklin,
             ) = pickle.load(f)
+        if clusteranalysis != "y":
+            clusteranalysis = str(input("Cluster analysis currently off, would you like to run it? y/n ").lower())
+        else:
+            pass
         sagasu_core.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
         sagasu_core.run_sagasu_analysis(
             projname, highres, lowres, highsites, lowsites, path, clusteranalysis
@@ -73,3 +80,4 @@ if pro_or_ana == "a" or "p":
         sagasu_core.tophits(projname, path)
     else:
         print("No previous run found here, are you sure you are in the correct path?")
+
