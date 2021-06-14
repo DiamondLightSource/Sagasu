@@ -95,6 +95,18 @@ class core:
                     self.hklin,
                 ]
             ) = pickle.load(f)
+        return (
+            self.projname,
+            self.lowres,
+            self.highres,
+            self.lowsites,
+            self.highsites,
+            self.ntry,
+            self.clusteranalysis,
+            self.clust,
+            self.insin,
+            self.hklin,
+        )
 
     def replace(file, pattern, subst):
         file_handle = open(file, "r")
@@ -240,17 +252,40 @@ class core:
         with open(filename, "w") as file:
             file.write(filedata)
         with open(filename, "r") as infile, open(
-            self.path + "/" + self.projname + "_results/" + str(i) + "_" + str(j) + ".csv", "w"
+            self.path
+            + "/"
+            + self.projname
+            + "_results/"
+            + str(i)
+            + "_"
+            + str(j)
+            + ".csv",
+            "w",
         ) as outfile:
             for line in infile:
                 if line.startswith(" Try"):
                     outfile.write(",".join(line.split()) + "\n")
         with open(
-            self.path + "/" + self.projname + "_results/" + str(i) + "_" + str(j) + ".csv", "r"
+            self.path
+            + "/"
+            + self.projname
+            + "_results/"
+            + str(i)
+            + "_"
+            + str(j)
+            + ".csv",
+            "r",
         ) as f:
             data = f.read()
             with open(
-                self.path + "/" + self.projname + "_results/" + str(i) + "_" + str(j) + ".csv",
+                self.path
+                + "/"
+                + self.projname
+                + "_results/"
+                + str(i)
+                + "_"
+                + str(j)
+                + ".csv",
                 "w",
             ) as w:
                 w.write(data[:-1])
@@ -265,7 +300,8 @@ class core:
             while not (j <= (self.lowsites - 1)):
                 print("Results for " + str(i2) + "Å, " + str(j) + " sites:")
                 csvfile = os.path.join(
-                    self.path, self.projname + "_results/" + str(i) + "_" + str(j) + ".csv"
+                    self.path,
+                    self.projname + "_results/" + str(i) + "_" + str(j) + ".csv",
                 )
                 numbers = str(i) + "_" + str(j)
                 if self.clusteranalysis == "y":
@@ -284,6 +320,7 @@ class core:
             i = i + 1
 
     def for_ML_analysis(self):
+        to_run_ML = []
         if not os.path.exists(self.projname + "_figures"):
             os.mkdir(self.projname + "_figures")
         i = self.highres
@@ -293,16 +330,16 @@ class core:
             while not (j <= (self.lowsites - 1)):
                 print("Results for " + str(i2) + "Å, " + str(j) + " sites:")
                 csvfile = os.path.join(
-                    self.path, self.projname + "_results/" + str(i) + "_" + str(j) + ".csv"
+                    self.path,
+                    self.projname + "_results/" + str(i) + "_" + str(j) + ".csv",
                 )
                 numbers = str(i) + "_" + str(j)
-                if self.clusteranalysis == "y":
-                    print("***Generating Hexplots***")
-                    plot_for_ML(csvfile, numbers)
-                else:
-                    print("No cluster analysis requested")
+                print("***Generating ML Plots***")
+                to_run_ML += (csvfile, numbers)
+                # plot_for_ML(csvfile, numbers)
                 j = j - 1
             i = i + 1
+        return to_run_ML
 
     def plot_for_ML(self, filename, nums):
         df = pd.read_csv(
@@ -324,7 +361,14 @@ class core:
         plt.draw()
         ccallvsccweak = plt.gcf()
         ccallvsccweak.savefig(
-            self.path + "/" + self.projname + "_figures/" + self.projname + "_" + nums + ".png",
+            self.path
+            + "/"
+            + self.projname
+            + "_figures/"
+            + self.projname
+            + "_"
+            + nums
+            + "_ML.png",
             dpi=500,
             bbox_inches=0,
         )
@@ -390,7 +434,10 @@ class core:
             + "\n"
         )
         ax = plt.gcf()
-        ax.savefig(self.path + "/" + self.projname + "_figures/" + nums + "_clsdst.png", dpi=300)
+        ax.savefig(
+            self.path + "/" + self.projname + "_figures/" + nums + "_clsdst.png",
+            dpi=300,
+        )
         ax.clear()
         plt.close(ax)
 
@@ -483,7 +530,8 @@ class core:
         plt.draw()
         snsplot = plt.gcf()
         snsplot.savefig(
-            self.path + "/" + self.projname + "_figures/" + nums + "_hexplot.png", dpi=300
+            self.path + "/" + self.projname + "_figures/" + nums + "_hexplot.png",
+            dpi=300,
         )
         snsplot.clear()
         plt.close(snsplot)
@@ -772,25 +820,11 @@ if __name__ == "__main__":
     if pro_or_ana == "a" or "p":
         print("Analysis running...")
         if os.path.exists(os.path.join(path, "inps.pkl")):
-            with open("inps.pkl", "rb") as f:
-                (
-                    projname,
-                    lowres,
-                    highres,
-                    lowsites,
-                    highsites,
-                    ntry,
-                    clusteranalysis,
-                    clust,
-                    insin,
-                    hklin,
-                ) = pickle.load(f)
+            run.readpickle()
             to_run = run.cleanup_prev()
             pool.map(core.results, to_run)
-            run.run_sagasu_analysis(
-                projname, highres, lowres, highsites, lowsites, path, clusteranalysis
-            )
-            run.tophits(projname, path)
+            run.run_sagasu_analysis()
+            run.tophits()
         else:
             print(
                 "No previous run found here, are you sure you are in the correct path?"

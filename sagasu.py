@@ -18,7 +18,7 @@ pro_or_ana = str(
 run = sagasu_core.core()
 
 if pro_or_ana == "p":
-    run.core.get_input()
+    run.get_input()
     if os.path.exists(os.path.join(path, "inps.pkl")):
         with open("inps.pkl", "rb") as f:
             (
@@ -33,8 +33,8 @@ if pro_or_ana == "p":
                 insin,
                 hklin,
             ) = pickle.load(f)
-    run.core.shelx_write(projname)
-    run.core.run_sagasu_proc(
+    run.shelx_write(projname)
+    run.run_sagasu_proc(
         pro_or_ana,
         projname,
         highres,
@@ -45,10 +45,10 @@ if pro_or_ana == "p":
         hklin,
         path,
         ntry,
-        clust
+        clust,
     )
     if clust == "c":
-        run.core.qstat_progress(lowres, highres, lowsites, highsites)
+        run.qstat_progress(lowres, highres, lowsites, highsites)
     else:
         print("Processing finished.")
 
@@ -57,7 +57,7 @@ if pro_or_ana == "a" or "p":
     if os.path.exists(os.path.join(path, "inps.pkl")):
         with open("inps.pkl", "rb") as f:
             (
-               projname,
+                projname,
                 lowres,
                 highres,
                 lowsites,
@@ -68,10 +68,10 @@ if pro_or_ana == "a" or "p":
                 insin,
                 hklin,
             ) = pickle.load(f)
-        run.core.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
-        run.core.run_sagasu_analysis(
+        run.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
+        run.run_sagasu_analysis(
             projname, highres, lowres, highsites, lowsites, path, clusteranalysis
         )
-        run.core.tophits(projname, path)
+        run.tophits(projname, path)
     else:
         print("No previous run found here, are you sure you are in the correct path?")
