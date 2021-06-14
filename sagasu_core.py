@@ -49,18 +49,7 @@ class core:
         ).lower()
         self.insin = os.path.join(self.fa_path, self.projname + "_fa.ins")
         self.hklin = os.path.join(self.fa_path, self.projname + "_fa.hkl")
-        self.writepickle(
-            self.projname,
-            self.lowres,
-            self.highres,
-            self.lowsites,
-            self.highsites,
-            self.ntry,
-            self.clusteranalysis,
-            self.clust,
-            self.insin,
-            self.hklin,
-        )
+        self.writepickle()
 
     def writepickle(self):
         with open("inps.pkl", "wb") as f:
