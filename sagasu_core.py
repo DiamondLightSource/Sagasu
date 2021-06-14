@@ -49,7 +49,7 @@ class core:
         ).lower()
         self.insin = os.path.join(self.fa_path, self.projname + "_fa.ins")
         self.hklin = os.path.join(self.fa_path, self.projname + "_fa.hkl")
-        writepickle(
+        self.writepickle(
             self.projname,
             self.lowres,
             self.highres,
