@@ -35,8 +35,8 @@ if pro_or_ana == "a" or "p":
     print("Analysis running, prepping files...")
     if os.path.exists(os.path.join(path, "inps.pkl")):
         run.readpickle()
-        #to_run = run.cleanup_prev()
-        #pool.starmap(run.results, to_run)
+        to_run = run.cleanup_prev()
+        pool.starmap(run.results, to_run)
         clustering_distance_torun, dbscan_torun, hexplots_torun, ccoutliers_torun = run.run_sagasu_analysis()
         #print("Clustering distance analysis...")
         #pool.starmap(run.clustering_distance, clustering_distance_torun)
