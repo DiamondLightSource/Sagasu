@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sagasu_core
 import os
 import sys
