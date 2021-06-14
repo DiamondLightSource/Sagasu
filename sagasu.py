@@ -48,4 +48,4 @@ if pro_or_ana == "a" or "p":
         pool.starmap(run.ccweakoutliers, ccoutliers_torun)
         run.tophits()
     else:
-        print("No previous run found")
+        print("No previous run found!")
