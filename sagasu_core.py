@@ -110,7 +110,7 @@ class core:
             self.hklin,
         )
 
-    def replace(file, pattern, subst):
+    def replace(self, file, pattern, subst):
         file_handle = open(file, "r")
         file_string = file_handle.read()
         file_handle.close()
