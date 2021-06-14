@@ -31,8 +31,9 @@ sns.set()
 
 
 class core:
-    def init(self):
+    def __init__(self):
         self.timestamp = datetime.now()
+        self.path = os.getcwd()
 
     def get_input(self):
         self.projname = input("Name of project (SHELX prefix): ")
@@ -61,7 +62,7 @@ class core:
             self.hklin,
         )
 
-    def writepickle(self,):
+    def writepickle(self):
         with open("inps.pkl", "wb") as f:
             pickle.dump(
                 [
@@ -83,18 +84,30 @@ class core:
         with open("inps.pkl", "rb") as f:
             (
                 [
-                    self.projname,
-                    self.lowres,
-                    self.highres,
-                    self.lowsites,
-                    self.highsites,
-                    self.ntry,
-                    self.clusteranalysis,
-                    self.clust,
-                    self.insin,
-                    self.hklin,
+                    projname,
+                    lowres,
+                    highres,
+                    lowsites,
+                    highsites,
+                    ntry,
+                    clusteranalysis,
+                    clust,
+                    insin,
+                    hklin,
                 ]
             ) = pickle.load(f)
+            self.projname, self.lowres, self.highres, self.lowsites, self.highsites, self.ntry, self.clusteranalysis, self.clust, self.insin, self.hklin = (
+                projname,
+                lowres,
+                highres,
+                lowsites,
+                highsites,
+                ntry,
+                clusteranalysis,
+                clust,
+                insin,
+                hklin,
+            )
         return (
             self.projname,
             self.lowres,
@@ -230,7 +243,7 @@ class core:
                     + self.projname
                     + "_fa.lst",
                 )
-                self.torun += (lstfile, i, j)
+                self.torun.append((lstfile, i, j))
                 # results(lstfile, self.path, self.projname, i, j)
                 j = j - 1
             i = i + 1
@@ -291,6 +304,10 @@ class core:
                 w.write(data[:-1])
 
     def run_sagasu_analysis(self):
+        clustering_distance_torun = []
+        dbscan_torun = []
+        hexplots_torun = []
+        ccoutliers_torun = []
         if not os.path.exists(self.projname + "_figures"):
             os.mkdir(self.projname + "_figures")
         i = self.highres
@@ -298,7 +315,7 @@ class core:
             i2 = i / 10
             j = self.highsites
             while not (j <= (self.lowsites - 1)):
-                print("Results for " + str(i2) + "Å, " + str(j) + " sites:")
+                print("Prepping for " + str(i2) + "Å, " + str(j) + " sites")
                 csvfile = os.path.join(
                     self.path,
                     self.projname + "_results/" + str(i) + "_" + str(j) + ".csv",
@@ -306,18 +323,23 @@ class core:
                 numbers = str(i) + "_" + str(j)
                 if self.clusteranalysis == "y":
                     print("***Bayesian Gaussian Mixture Analysis***")
-                    clustering_distance(csvfile, numbers)
+                    self.clustering_distance(csvfile, numbers)
+                    clustering_distance_torun.append((csvfile, numbers))
                     print("***DBSCAN Analysis***")
-                    analysis(csvfile, numbers, i, j)
-                    print("***Generating Hexplots***")
-                    analysis_2(csvfile, numbers, i, j)
+                    self.analysis(csvfile, numbers, i, j)
+                    dbscan_torun.append((csvfile, numbers, i, j))
+                    # print("***Generating Hexplots***")
+                    # analysis_2(csvfile, numbers, i, j)
+                    hexplots_torun.append((csvfile, numbers))
                 else:
                     print("No cluster analysis requested")
-                print("***Outlier Analysis***")
-                ccalloutliers(csvfile, i, j)
-                ccweakoutliers(csvfile, i, j)
+                # print("***Outlier Analysis***")
+                # ccalloutliers(csvfile, i, j)
+                # ccweakoutliers(csvfile, i, j)
+                ccoutliers_torun.append((csvfile, i, j))
                 j = j - 1
             i = i + 1
+        return clustering_distance_torun, dbscan_torun, hexplots_torun, ccoutliers_torun
 
     def for_ML_analysis(self):
         to_run_ML = []
@@ -328,14 +350,14 @@ class core:
             i2 = i / 10
             j = self.highsites
             while not (j <= (self.lowsites - 1)):
-                print("Results for " + str(i2) + "Å, " + str(j) + " sites:")
+                # print("Results for " + str(i2) + "Å, " + str(j) + " sites:")
                 csvfile = os.path.join(
                     self.path,
                     self.projname + "_results/" + str(i) + "_" + str(j) + ".csv",
                 )
                 numbers = str(i) + "_" + str(j)
-                print("***Generating ML Plots***")
-                to_run_ML += (csvfile, numbers)
+                # print("***Generating ML Plots***")
+                to_run_ML.append((csvfile, numbers))
                 # plot_for_ML(csvfile, numbers)
                 j = j - 1
             i = i + 1
@@ -375,7 +397,7 @@ class core:
         ccallvsccweak.clear()
         plt.close(ccallvsccweak)
 
-    def draw_ellipse(position, covariance, ax=None, **kwargs):
+    def draw_ellipse(self, position, covariance, ax=None, **kwargs):
         """Draw an ellipse with a given position and covariance"""
         ax = ax or plt.gca()
         # Convert covariance to principal axes
@@ -401,7 +423,7 @@ class core:
             ax.scatter(X[:, 0], X[:, 1], s=40, zorder=2)
         w_factor = 0.2 / gmm.weights_.max()
         for pos, covar, w in zip(gmm.means_, gmm.covariances_, gmm.weights_):
-            draw_ellipse(pos, covar, alpha=w * w_factor)
+            self.draw_ellipse(pos, covar, alpha=w * w_factor)
         if gmm.converged_ is True:
             print("Clustering converged after " + str(gmm.n_iter_) + " iterations")
         if gmm.converged_ is False:
@@ -471,7 +493,7 @@ class core:
             init_params="kmeans",
             tol=1e-6,
         )
-        plot_gmm(self.projname, self.path, gmm, arr, ni, nums)
+        self.plot_gmm(gmm, arr, ni, nums)
 
     def analysis(self, filename, nums, a_res, a_sites):
         df = pd.read_csv(
@@ -780,53 +802,37 @@ if __name__ == "__main__":
         ).lower()
     )
 
-    run = core()
-
     if pro_or_ana == "p":
+        run = core()
         run.get_input()
+        run.writepickle()
         if os.path.exists(os.path.join(path, "inps.pkl")):
-            with open("inps.pkl", "rb") as f:
-                (
-                    projname,
-                    lowres,
-                    highres,
-                    lowsites,
-                    highsites,
-                    ntry,
-                    clusteranalysis,
-                    clust,
-                    insin,
-                    hklin,
-                ) = pickle.load(f)
-        run.shelx_write(projname)
-        run.run_sagasu_proc(
-            pro_or_ana,
-            projname,
-            highres,
-            lowres,
-            highsites,
-            lowsites,
-            insin,
-            hklin,
-            path,
-            ntry,
-            clust,
-        )
-        if clust == "c":
-            run.qstat_progress(lowres, highres, lowsites, highsites)
+            run.readpickle()
+            run.shelx_write(projname)
+            run.run_sagasu_proc()
+        #if clust == "c":
+            #run.qstat_progress(lowres, highres, lowsites, highsites)
         else:
             print("Processing finished.")
 
     if pro_or_ana == "a" or "p":
-        print("Analysis running...")
+        run = core()
+        print("Analysis running, prepping files...")
         if os.path.exists(os.path.join(path, "inps.pkl")):
             run.readpickle()
-            to_run = run.cleanup_prev()
-            pool.map(core.results, to_run)
-            run.run_sagasu_analysis()
+            #to_run = run.cleanup_prev()
+            #pool.starmap(run.results, to_run)
+            clustering_distance_torun, dbscan_torun, hexplots_torun, ccoutliers_torun = run.run_sagasu_analysis()
+            #print("Clustering distance analysis...")
+            #pool.starmap(run.clustering_distance, clustering_distance_torun)
+            #print("DBScan")
+            #pool.starmap(run.analysis, dbscan_torun)
+            print("Generating hexplots...")
+            pool.starmap(run.analysis_2, hexplots_torun)
+            print("Running outlier analysis...")
+            pool.starmap(run.ccalloutliers, ccoutliers_torun)
+            pool.starmap(run.ccweakoutliers, ccoutliers_torun)
             run.tophits()
         else:
-            print(
-                "No previous run found here, are you sure you are in the correct path?"
-            )
+            print("No previous run found")
 
