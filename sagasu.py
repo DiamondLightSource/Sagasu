@@ -5,6 +5,7 @@
 """
 import sagasu_core
 import os
+from multiprocessing import Pool
 
 path = os.getcwd()
 print("You are here:", path)
