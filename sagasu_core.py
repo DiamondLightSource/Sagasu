@@ -178,9 +178,9 @@ class core:
                     str(j),
                     self.projname + "_fa.ins",
                 )
-                replace(f, "FIND", "FIND " + str(j) + "\n")
-                replace(f, "SHEL", "SHEL 999 " + str(i2) + "\n")
-                replace(f, "NTRY", "NTRY " + str(self.ntry) + "\n")
+                self.replace(f, "FIND", "FIND " + str(j) + "\n")
+                self.replace(f, "SHEL", "SHEL 999 " + str(i2) + "\n")
+                self.replace(f, "NTRY", "NTRY " + str(self.ntry) + "\n")
                 if self.clust == "l":
                     os.chdir(workpath)
                     subprocess.run(
@@ -761,22 +761,6 @@ class core:
         os.chmod("phenix_emma.sh", 0o775)
         os.system("./phenix_emma.sh")
 
-    def write_analysis_file(pro_or_ana, statusofrun):
-        shelxjob = open("wait.sh", "w")
-        shelxjob.write("module load python/3 \n")
-        shelxjob.write(
-            "/home/i23user/bin/shelxgrid/sagasu_analysis 2>&1 | tee -a sagasu.log"
-        )
-        shelxjob.close()
-        os.chmod("wait.sh", 0o775)
-        if pro_or_ana == "a":
-            os.system("./wait.sh")
-        if pro_or_ana == "p":
-            os.system(
-                "qsub "
-                + statusofrun
-                + " -N sagasuanalysis -P i23 -q low.q -l h_vmem=4G -pe smp 20 -cwd ./wait.sh"
-            )
 
 
 if __name__ == "__main__":
