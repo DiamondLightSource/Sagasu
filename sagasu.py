@@ -23,7 +23,7 @@ if pro_or_ana == "p":
     run.writepickle()
     if os.path.exists(os.path.join(path, "inps.pkl")):
         run.readpickle()
-        run.shelx_write(projname)
+        run.shelx_write()
         run.run_sagasu_proc()
     #if clust == "c":
         #run.qstat_progress(lowres, highres, lowsites, highsites)
