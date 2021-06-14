@@ -4,74 +4,48 @@
 @author: Chris
 """
 import sagasu_core
-import pickle
 import os
 
 path = os.getcwd()
 print("You are here:", path)
+pool = Pool(os.cpu_count() - 1)
+print("Using ", str(os.cpu_count() - 1), "CPU cores")
 pro_or_ana = str(
     input(
         "Would you like to run (p)rocessing and analysis or just (a)nalysis: "
     ).lower()
 )
 
-run = sagasu_core.core()
-
 if pro_or_ana == "p":
+    run = sagasu_core.core()
     run.get_input()
+    run.writepickle()
     if os.path.exists(os.path.join(path, "inps.pkl")):
-        with open("inps.pkl", "rb") as f:
-            (
-                projname,
-                lowres,
-                highres,
-                lowsites,
-                highsites,
-                ntry,
-                clusteranalysis,
-                clust,
-                insin,
-                hklin,
-            ) = pickle.load(f)
-    run.shelx_write(projname)
-    run.run_sagasu_proc(
-        pro_or_ana,
-        projname,
-        highres,
-        lowres,
-        highsites,
-        lowsites,
-        insin,
-        hklin,
-        path,
-        ntry,
-        clust,
-    )
-    if clust == "c":
-        run.qstat_progress(lowres, highres, lowsites, highsites)
+        run.readpickle()
+        run.shelx_write(projname)
+        run.run_sagasu_proc()
+    #if clust == "c":
+        #run.qstat_progress(lowres, highres, lowsites, highsites)
     else:
         print("Processing finished.")
 
 if pro_or_ana == "a" or "p":
-    print("Analysis running...")
+    run = sagasu_core.core()
+    print("Analysis running, prepping files...")
     if os.path.exists(os.path.join(path, "inps.pkl")):
-        with open("inps.pkl", "rb") as f:
-            (
-                projname,
-                lowres,
-                highres,
-                lowsites,
-                highsites,
-                ntry,
-                clusteranalysis,
-                clust,
-                insin,
-                hklin,
-            ) = pickle.load(f)
-        run.cleanup_prev(path, projname, highres, lowres, highsites, lowsites)
-        run.run_sagasu_analysis(
-            projname, highres, lowres, highsites, lowsites, path, clusteranalysis
-        )
-        run.tophits(projname, path)
+        run.readpickle()
+        #to_run = run.cleanup_prev()
+        #pool.starmap(run.results, to_run)
+        clustering_distance_torun, dbscan_torun, hexplots_torun, ccoutliers_torun = run.run_sagasu_analysis()
+        #print("Clustering distance analysis...")
+        #pool.starmap(run.clustering_distance, clustering_distance_torun)
+        #print("DBScan")
+        #pool.starmap(run.analysis, dbscan_torun)
+        print("Generating hexplots...")
+        pool.starmap(run.analysis_2, hexplots_torun)
+        print("Running outlier analysis...")
+        pool.starmap(run.ccalloutliers, ccoutliers_torun)
+        pool.starmap(run.ccweakoutliers, ccoutliers_torun)
+        run.tophits()
     else:
-        print("No previous run found here, are you sure you are in the correct path?")
+        print("No previous run found")
