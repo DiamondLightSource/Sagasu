@@ -143,67 +143,66 @@ class core:
         os.chmod("shelxd_job.sh", 0o775)
 
     def run_sagasu_proc(self):
-        if self.pro_or_ana == "p":
-            os.chdir(self.path)
-            Path(self.projname).mkdir(parents=True, exist_ok=True)
-            i = self.highres
-            if self.clust == "l":
-                tot = (self.lowres - self.highres) * (
-                    (self.highsites + 1) - self.lowsites
+        os.chdir(self.path)
+        Path(self.projname).mkdir(parents=True, exist_ok=True)
+        i = self.highres
+        if self.clust == "l":
+            tot = (self.lowres - self.highres) * (
+                (self.highsites + 1) - self.lowsites
+            )
+            pbar = tqdm(desc="SHELXD", total=tot, dynamic_ncols=True)
+        while not (i >= self.lowres):
+            Path(os.path.join(self.projname, str(i))).mkdir(
+                parents=True, exist_ok=True
+            )
+            i2 = i / 10
+            j = self.highsites
+            while not (j <= (self.lowsites - 1)):
+                os.makedirs(
+                    os.path.join(self.projname, str(i), str(j)), exist_ok=True
                 )
-                pbar = tqdm(desc="SHELXD", total=tot, dynamic_ncols=True)
-            while not (i >= self.lowres):
-                Path(os.path.join(self.projname, str(i))).mkdir(
-                    parents=True, exist_ok=True
+                shutil.copy2(
+                    self.insin, (os.path.join(self.projname, str(i), str(j)))
                 )
-                i2 = i / 10
-                j = self.highsites
-                while not (j <= (self.lowsites - 1)):
-                    os.makedirs(
-                        os.path.join(self.projname, str(i), str(j)), exist_ok=True
+                shutil.copy2(
+                    self.hklin, (os.path.join(self.projname, str(i), str(j)))
+                )
+                shutil.copy2(
+                    "shelxd_job.sh", (os.path.join(self.projname, str(i), str(j)))
+                )
+                workpath = os.path.join(self.path, self.projname, str(i), str(j))
+                f = os.path.join(
+                    self.path,
+                    self.projname,
+                    str(i),
+                    str(j),
+                    self.projname + "_fa.ins",
+                )
+                replace(f, "FIND", "FIND " + str(j) + "\n")
+                replace(f, "SHEL", "SHEL 999 " + str(i2) + "\n")
+                replace(f, "NTRY", "NTRY " + str(self.ntry) + "\n")
+                if self.clust == "l":
+                    os.chdir(workpath)
+                    subprocess.run(
+                        ["shelxd", self.projname + "_fa"], stdout=subprocess.PIPE
                     )
-                    shutil.copy2(
-                        self.insin, (os.path.join(self.projname, str(i), str(j)))
+                    pbar.update(1)
+                    pbar.refresh()
+                    os.chdir(self.path)
+                elif self.clust == "c":
+                    os.system(
+                        "cd "
+                        + workpath
+                        + "; qsub -P i23 -q low.q -l h_vmem=5G -N sag_"
+                        + str(i)
+                        + "_"
+                        + str(j)
+                        + " -pe smp 40-10 -cwd ./shelxd_job.sh"
                     )
-                    shutil.copy2(
-                        self.hklin, (os.path.join(self.projname, str(i), str(j)))
-                    )
-                    shutil.copy2(
-                        "shelxd_job.sh", (os.path.join(self.projname, str(i), str(j)))
-                    )
-                    workpath = os.path.join(self.path, self.projname, str(i), str(j))
-                    f = os.path.join(
-                        self.path,
-                        self.projname,
-                        str(i),
-                        str(j),
-                        self.projname + "_fa.ins",
-                    )
-                    replace(f, "FIND", "FIND " + str(j) + "\n")
-                    replace(f, "SHEL", "SHEL 999 " + str(i2) + "\n")
-                    replace(f, "NTRY", "NTRY " + str(self.ntry) + "\n")
-                    if self.clust == "l":
-                        os.chdir(workpath)
-                        subprocess.run(
-                            ["shelxd", self.projname + "_fa"], stdout=subprocess.PIPE
-                        )
-                        pbar.update(1)
-                        pbar.refresh()
-                        os.chdir(self.path)
-                    elif self.clust == "c":
-                        os.system(
-                            "cd "
-                            + workpath
-                            + "; qsub -P i23 -q low.q -l h_vmem=5G -N sag_"
-                            + str(i)
-                            + "_"
-                            + str(j)
-                            + " -pe smp 40-10 -cwd ./shelxd_job.sh"
-                        )
-                    else:
-                        print("error in input...")
-                    j = j - 1
-                i = i + 1
+                else:
+                    print("error in input...")
+                j = j - 1
+            i = i + 1
 
     def cleanup_prev(self):
         resultspath = os.path.join(self.path, self.projname + "_results")
