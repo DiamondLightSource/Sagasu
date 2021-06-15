@@ -44,9 +44,7 @@ class core:
         self.lowsites = int(input("Minimum number of sites to search: "))
         self.ntry = int(input("Number of trials: "))
         self.clust = str(input("Run on (c)luster or (l)ocal machine? c/l ")).lower()
-        self.clusteranalysis = str(
-            "Run cluster analysis after (time consuming)? y/n "
-        ).lower()
+        self.clusteranalysis = str(input("Run cluster analysis after (time consuming)? y/n ")).lower()
         self.insin = os.path.join(self.fa_path, self.projname + "_fa.ins")
         self.hklin = os.path.join(self.fa_path, self.projname + "_fa.hkl")
         self.writepickle()
