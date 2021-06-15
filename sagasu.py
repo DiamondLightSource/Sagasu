@@ -25,8 +25,8 @@ if pro_or_ana == "p":
         run.readpickle()
         run.shelx_write()
         run.run_sagasu_proc()
-    #if clust == "c":
-        #run.qstat_progress(lowres, highres, lowsites, highsites)
+    if clust == "c":
+        run.qstat_progress()
     else:
         print("Processing finished.")
 
