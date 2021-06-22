@@ -16,6 +16,7 @@ import seaborn as sns
 import numpy as np
 import math
 import pickle
+#from cuml import DBSCAN as cumlDBSCAN
 from sklearn.cluster import DBSCAN
 import heapq
 from mpl_toolkits.mplot3d import Axes3D
@@ -692,6 +693,8 @@ class core:
         """
         )
         print(top)
+        with open('tophits.txt', 'w') as outfile:
+            outfile.write(top)
         ax = plt.axes(projection="3d")
         ax.plot_trisurf(
             df["res"], df["sites"], df["score"], cmap="viridis", edgecolor="none"
@@ -753,7 +756,7 @@ class core:
             + self.projname
             + "_fa.pdb --tolerance=6 --space_group="
             + sg
-            + " 2>&1 | tee -a sagasu.log"
+            + " 2>&1 | tee -a phenixemma.log"
         )
         phenixemma.close()
         os.chmod("phenix_emma.sh", 0o775)
@@ -780,8 +783,8 @@ if __name__ == "__main__":
             run.readpickle()
             run.shelx_write(projname)
             run.run_sagasu_proc()
-        #if clust == "c":
-            #run.qstat_progress(lowres, highres, lowsites, highsites)
+        if clust == "c":
+            run.qstat_progress(lowres, highres, lowsites, highsites)
         else:
             print("Processing finished.")
 
@@ -803,6 +806,8 @@ if __name__ == "__main__":
             pool.starmap(run.ccalloutliers, ccoutliers_torun)
             pool.starmap(run.ccweakoutliers, ccoutliers_torun)
             run.tophits()
+            to_run_ML = run.for_ML_analysis()
+            pool.starmap(run.plot_for_ML, to_run_ML)
         else:
             print("No previous run found")
 
