@@ -3,7 +3,7 @@
 """
 Created on Fri Mar 13 14:48:45 2020
 @author: Christian M. Orr
-"""
+""" 
 
 from datetime import datetime
 import os
@@ -29,7 +29,6 @@ from multiprocessing import Pool
 
 
 sns.set()
-
 
 class core:
     def __init__(self):

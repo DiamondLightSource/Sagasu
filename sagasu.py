@@ -7,6 +7,7 @@ import sagasu_core
 import os
 from multiprocessing import Pool
 
+
 path = os.getcwd()
 print("You are here:", path)
 pool = Pool(os.cpu_count() - 1)
@@ -16,6 +17,7 @@ pro_or_ana = str(
         "Would you like to run (p)rocessing and analysis or just (a)nalysis: "
     ).lower()
 )
+
 
 if pro_or_ana == "p":
     run = sagasu_core.core()
