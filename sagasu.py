@@ -27,6 +27,7 @@ if pro_or_ana == "p":
         run.readpickle()
         run.shelx_write()
         run.run_sagasu_proc()
+	continue = input("Continue? ")
     else:
         print("Processing finished.")
 

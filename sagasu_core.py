@@ -191,11 +191,11 @@ class core:
                     os.system(
                         "cd "
                         + workpath
-                        + "; qsub -P i23 -q low.q -l h_vmem=5G -N sag_"
+                        + "; qsub -P i23 -q low.q -l mfree=8G -N sag_"
                         + str(i)
                         + "_"
                         + str(j)
-                        + " -pe smp 40-10 -cwd ./shelxd_job.sh"
+                        + " -pe smp 40-33 -cwd ./shelxd_job.sh"
                     )
                 else:
                     print("error in input...")
@@ -365,7 +365,7 @@ class core:
             ],
         )
         plt.scatter(df["CCALL"], df["CCWEAK"], marker="o")
-        plt.axis("off")
+        #plt.axis("off")
         plt.draw()
         ccallvsccweak = plt.gcf()
         ccallvsccweak.savefig(
