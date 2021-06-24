@@ -364,7 +364,7 @@ class core:
                 "PATFOM",
             ],
         )
-        plt.scatter(df["CCALL"], df["CCWEAK"], marker="o")
+        plt.scatter(df["CCWEAK"], df["CCALL"], c=df["PATFOM"], cmap='Blues', marker="o")
         #plt.axis("off")
         plt.draw()
         ccallvsccweak = plt.gcf()
@@ -544,6 +544,38 @@ class core:
         snsplot.clear()
         plt.close(snsplot)
 
+    def CFOM_PATFOM_analysis(self, filename, resolution, sitessearched):
+        df = pd.read_csv(
+            filename,
+            sep=",",
+            names=[
+                "linebeg",
+                "TRY",
+                "CPUNO",
+                "CCALL",
+                "CCWEAK",
+                "CFOM",
+                "BEST",
+                "PATFOM",
+            ],
+        )
+        pd.DataFrame.drop(df, labels="linebeg", axis=1, inplace=True)
+        df.sort_values("CFOM", ascending=False, inplace=True, na_position='last')
+        top_CFOM = df["CFOM"].values[0]
+        corr_PATFOM = df["PATFOM"].values[0]
+        with open(self.projname + "_results/CFOM_PATFOM.csv", "a") as allfom:
+            allfom.write(
+                str(int(resolution) / 10)
+                + ","
+                + str(sitessearched)
+                + ","
+                + str(top_CFOM)
+                + ","
+                + str(corr_PATFOM)
+                + "\n"
+            )
+        print("Best CFOM from", str(resolution/10), str(sitessearched), "is:", str(top_CFOM), end="\n")
+
     def ccalloutliers(self, filename, resolution, sitessearched):
         df = pd.read_csv(
             filename,
@@ -684,22 +716,74 @@ class core:
         df.sort_values(by=["score"], ascending=False, inplace=True)
         top = df[["res", "sites", "score"]]
         top = df.head(10)
-        top = top.reset_index(drop=True)
+        topall = str(top.reset_index(drop=True))
         print(
             """
-        Here are the top 10 hits:
+        Here are the top 10 hits (ccall):
 
         """
         )
-        print(top)
+        print(topall)
+        weak_df = pd.read_csv(
+            self.projname + "_results/ccweak.csv",
+            sep=",",
+            names=["res", "sites", "mad5", "mad6", "mad7", "mad8", "mad9", "mad10"],
+        )
+        weak_df["score"] = (
+            (weak_df["mad5"] * 1)
+            + (weak_df["mad6"] * 4)
+            + (weak_df["mad7"] * 8)
+            + (weak_df["mad8"] * 32)
+            + (weak_df["mad9"] * 128)
+            + (weak_df["mad10"] * 512)
+        )
+        weak_df.sort_values(by=["score"], ascending=False, inplace=True)
+        top = weak_df[["res", "sites", "score"]]
+        top = weak_df.head(10)
+        topweak = str(top.reset_index(drop=True))
+        print(
+            """
+        Here are the top 10 hits (ccweak):
+
+        """
+        )
+        print(topweak)
+        cfom_df = pd.read_csv(self.projname + "_results/CFOM_PATFOM.csv", sep=",", names=["res", "sites", "CFOM", "PATFOM"])
+        cfom_df.sort_values("CFOM", ascending=False, inplace=True)
+        cfom_df["score"] = ((cfom_df["CFOM"]) - (((cfom_df["res"])) * (cfom_df["res"])) - (0.3 * (cfom_df["sites"])))
+        top = cfom_df.head(10)
+        top_CFOM = str(top.reset_index(drop=True))
+        print(top_CFOM)
         with open('tophits.txt', 'w') as outfile:
-            outfile.write(top)
+            outfile.write(topall)
+            outfile.write("\n")
+            outfile.write(topweak)
+            outfile.write("\n")
+            outfile.write(top_CFOM)
+        # make some 3d figures
         ax = plt.axes(projection="3d")
         ax.plot_trisurf(
             df["res"], df["sites"], df["score"], cmap="viridis", edgecolor="none"
         )
         madplot = plt.gcf()
-        madplot.savefig(self.projname + "_figures/mad.png", dpi=600)
+        madplot.savefig(self.projname + "_figures/ccall.png", dpi=600)
+        plt.clf()
+        plt.cla()
+        plt.close()
+        ax = plt.axes(projection="3d")
+        ax.plot_trisurf(
+            weak_df["res"], weak_df["sites"], weak_df["score"], cmap="viridis", edgecolor="none"
+        )
+        madplot = plt.gcf()
+        madplot.savefig(self.projname + "_figures/ccweak.png", dpi=600)
+        plt.clf()
+        plt.cla()
+        plt.close()
+        ax = plt.axes(projection="3d")
+        ax.plot_trisurf(cfom_df["res"], cfom_df["sites"], cfom_df["score"], cmap="viridis", edgecolor="none")
+        madplot = plt.gcf()
+        madplot.savefig(self.projname + "_figures/CFOM.png", dpi=600)
+        # run phenix.emma on top 2 CFOM
         (firstres, firstsites, secondres, secondsites) = (
             top.iloc[[0], [0]].values[0],
             top.iloc[[0], [1]].values[0],
