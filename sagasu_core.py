@@ -309,10 +309,10 @@ class core:
                 numbers = str(i) + "_" + str(j)
                 if self.clusteranalysis == "y":
                     print("***Bayesian Gaussian Mixture Analysis***")
-                    self.clustering_distance(csvfile, numbers)
+                    #self.clustering_distance(csvfile, numbers)
                     clustering_distance_torun.append((csvfile, numbers))
                     print("***DBSCAN Analysis***")
-                    self.analysis(csvfile, numbers, i, j)
+                    #self.analysis(csvfile, numbers, i, j)
                     dbscan_torun.append((csvfile, numbers, i, j))
                     # print("***Generating Hexplots***")
                     # analysis_2(csvfile, numbers, i, j)
