@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
+#!/dls_sw/i23/scripts/ctrl_conda python3
 # -*- coding: utf-8 -*-
 """
 Created on Fri Mar 13 14:48:45 2020
 @author: Christian M. Orr
-""" 
+"""
 
 from datetime import datetime
 import os
@@ -16,7 +16,9 @@ import seaborn as sns
 import numpy as np
 import math
 import pickle
-#from cuml import DBSCAN as cumlDBSCAN
+import glob
+
+# from cuml import DBSCAN as cumlDBSCAN
 from sklearn.cluster import DBSCAN
 import heapq
 from mpl_toolkits.mplot3d import Axes3D
@@ -26,9 +28,12 @@ import subprocess
 import time
 from tqdm import tqdm
 from multiprocessing import Pool
+import drmaa2
+from drmaa2 import JobSession, JobTemplate, JobInfo, Drmaa2Exception
 
 
 sns.set()
+
 
 class core:
     def __init__(self):
@@ -44,10 +49,21 @@ class core:
         self.lowsites = int(input("Minimum number of sites to search: "))
         self.ntry = int(input("Number of trials: "))
         self.clust = str(input("Run on (c)luster or (l)ocal machine? c/l ")).lower()
-        self.clusteranalysis = str(input("Run cluster analysis after (time consuming)? y/n ")).lower()
+        self.clusteranalysis = str(
+            input("Run cluster analysis after (time consuming)? y/n ")
+        ).lower()
         self.insin = os.path.join(self.fa_path, self.projname + "_fa.ins")
         self.hklin = os.path.join(self.fa_path, self.projname + "_fa.hkl")
         self.writepickle()
+        return (
+            self.projname,
+            self.fa_path,
+            self.highres,
+            self.lowres,
+            self.highsites,
+            self.lowsites,
+            self.ntry,
+        )
 
     def writepickle(self):
         with open("inps.pkl", "wb") as f:
@@ -83,7 +99,18 @@ class core:
                     hklin,
                 ]
             ) = pickle.load(f)
-            self.projname, self.lowres, self.highres, self.lowsites, self.highsites, self.ntry, self.clusteranalysis, self.clust, self.insin, self.hklin = (
+            (
+                self.projname,
+                self.lowres,
+                self.highres,
+                self.lowsites,
+                self.highsites,
+                self.ntry,
+                self.clusteranalysis,
+                self.clust,
+                self.insin,
+                self.hklin,
+            ) = (
                 projname,
                 lowres,
                 highres,
@@ -145,36 +172,22 @@ class core:
         Path(self.projname).mkdir(parents=True, exist_ok=True)
         i = self.highres
         if self.clust == "l":
-            tot = (self.lowres - self.highres) * (
-                (self.highsites + 1) - self.lowsites
-            )
+            tot = (self.lowres - self.highres) * ((self.highsites + 1) - self.lowsites)
             pbar = tqdm(desc="SHELXD", total=tot, dynamic_ncols=True)
         while not (i >= self.lowres):
-            Path(os.path.join(self.projname, str(i))).mkdir(
-                parents=True, exist_ok=True
-            )
+            Path(os.path.join(self.projname, str(i))).mkdir(parents=True, exist_ok=True)
             i2 = i / 10
             j = self.highsites
             while not (j <= (self.lowsites - 1)):
-                os.makedirs(
-                    os.path.join(self.projname, str(i), str(j)), exist_ok=True
-                )
-                shutil.copy2(
-                    self.insin, (os.path.join(self.projname, str(i), str(j)))
-                )
-                shutil.copy2(
-                    self.hklin, (os.path.join(self.projname, str(i), str(j)))
-                )
+                os.makedirs(os.path.join(self.projname, str(i), str(j)), exist_ok=True)
+                shutil.copy2(self.insin, (os.path.join(self.projname, str(i), str(j))))
+                shutil.copy2(self.hklin, (os.path.join(self.projname, str(i), str(j))))
                 shutil.copy2(
                     "shelxd_job.sh", (os.path.join(self.projname, str(i), str(j)))
                 )
                 workpath = os.path.join(self.path, self.projname, str(i), str(j))
                 f = os.path.join(
-                    self.path,
-                    self.projname,
-                    str(i),
-                    str(j),
-                    self.projname + "_fa.ins",
+                    self.path, self.projname, str(i), str(j), self.projname + "_fa.ins"
                 )
                 self.replace(f, "FIND", "FIND " + str(j) + "\n")
                 self.replace(f, "SHEL", "SHEL 999 " + str(i2) + "\n")
@@ -309,10 +322,10 @@ class core:
                 numbers = str(i) + "_" + str(j)
                 if self.clusteranalysis == "y":
                     print("***Bayesian Gaussian Mixture Analysis***")
-                    #self.clustering_distance(csvfile, numbers)
+                    # self.clustering_distance(csvfile, numbers)
                     clustering_distance_torun.append((csvfile, numbers))
                     print("***DBSCAN Analysis***")
-                    #self.analysis(csvfile, numbers, i, j)
+                    # self.analysis(csvfile, numbers, i, j)
                     dbscan_torun.append((csvfile, numbers, i, j))
                     # print("***Generating Hexplots***")
                     # analysis_2(csvfile, numbers, i, j)
@@ -364,8 +377,8 @@ class core:
                 "PATFOM",
             ],
         )
-        plt.scatter(df["CCWEAK"], df["CCALL"], c=df["PATFOM"], cmap='Blues', marker="o")
-        #plt.axis("off")
+        plt.scatter(df["CCWEAK"], df["CCALL"], c=df["PATFOM"], cmap="Blues", marker="o")
+        # plt.axis("off")
         plt.draw()
         ccallvsccweak = plt.gcf()
         ccallvsccweak.savefig(
@@ -560,7 +573,7 @@ class core:
             ],
         )
         pd.DataFrame.drop(df, labels="linebeg", axis=1, inplace=True)
-        df.sort_values("CFOM", ascending=False, inplace=True, na_position='last')
+        df.sort_values("CFOM", ascending=False, inplace=True, na_position="last")
         top_CFOM = df["CFOM"].values[0]
         corr_PATFOM = df["PATFOM"].values[0]
         with open(self.projname + "_results/CFOM_PATFOM.csv", "a") as allfom:
@@ -574,7 +587,14 @@ class core:
                 + str(corr_PATFOM)
                 + "\n"
             )
-        print("Best CFOM from", str(resolution/10), str(sitessearched), "is:", str(top_CFOM), end="\n")
+        print(
+            "Best CFOM from",
+            str(resolution / 10),
+            str(sitessearched),
+            "is:",
+            str(top_CFOM),
+            end="\n",
+        )
 
     def ccalloutliers(self, filename, resolution, sitessearched):
         df = pd.read_csv(
@@ -716,14 +736,15 @@ class core:
         df.sort_values(by=["score"], ascending=False, inplace=True)
         top = df[["res", "sites", "score"]]
         top = df.head(10)
-        topall = str(top.reset_index(drop=True))
+        self.topallhtml = top.reset_index(drop=True).to_html()
+        self.topall = str(top.reset_index(drop=True))
         print(
             """
         Here are the top 10 hits (ccall):
 
         """
         )
-        print(topall)
+        print(self.topall)
         weak_df = pd.read_csv(
             self.projname + "_results/ccweak.csv",
             sep=",",
@@ -740,26 +761,36 @@ class core:
         weak_df.sort_values(by=["score"], ascending=False, inplace=True)
         top = weak_df[["res", "sites", "score"]]
         top = weak_df.head(10)
-        topweak = str(top.reset_index(drop=True))
+        self.topweakhtml = top.reset_index(drop=True).to_html()
+        self.topweak = str(top.reset_index(drop=True))
         print(
             """
         Here are the top 10 hits (ccweak):
 
         """
         )
-        print(topweak)
-        cfom_df = pd.read_csv(self.projname + "_results/CFOM_PATFOM.csv", sep=",", names=["res", "sites", "CFOM", "PATFOM"])
+        print(self.topweak)
+        cfom_df = pd.read_csv(
+            self.projname + "_results/CFOM_PATFOM.csv",
+            sep=",",
+            names=["res", "sites", "CFOM", "PATFOM"],
+        )
         cfom_df.sort_values("CFOM", ascending=False, inplace=True)
-        cfom_df["score"] = ((cfom_df["CFOM"]) - (((cfom_df["res"])) * (cfom_df["res"])) - (0.3 * (cfom_df["sites"])))
+        cfom_df["score"] = (
+            (cfom_df["CFOM"])
+            - (((cfom_df["res"])) * (cfom_df["res"]))
+            - (0.3 * (cfom_df["sites"]))
+        )
         top = cfom_df.head(10)
-        top_CFOM = str(top.reset_index(drop=True))
-        print(top_CFOM)
-        with open('tophits.txt', 'w') as outfile:
-            outfile.write(topall)
+        self.top_CFOMhtml = top.reset_index(drop=True).to_html()
+        self.top_CFOM = str(top.reset_index(drop=True))
+        print(self.top_CFOM)
+        with open("tophits.txt", "w") as outfile:
+            outfile.write(self.topall)
             outfile.write("\n")
-            outfile.write(topweak)
+            outfile.write(self.topweak)
             outfile.write("\n")
-            outfile.write(top_CFOM)
+            outfile.write(self.top_CFOM)
         # make some 3d figures
         ax = plt.axes(projection="3d")
         ax.plot_trisurf(
@@ -772,7 +803,11 @@ class core:
         plt.close()
         ax = plt.axes(projection="3d")
         ax.plot_trisurf(
-            weak_df["res"], weak_df["sites"], weak_df["score"], cmap="viridis", edgecolor="none"
+            weak_df["res"],
+            weak_df["sites"],
+            weak_df["score"],
+            cmap="viridis",
+            edgecolor="none",
         )
         madplot = plt.gcf()
         madplot.savefig(self.projname + "_figures/ccweak.png", dpi=600)
@@ -780,10 +815,18 @@ class core:
         plt.cla()
         plt.close()
         ax = plt.axes(projection="3d")
-        ax.plot_trisurf(cfom_df["res"], cfom_df["sites"], cfom_df["score"], cmap="viridis", edgecolor="none")
+        ax.plot_trisurf(
+            cfom_df["res"],
+            cfom_df["sites"],
+            cfom_df["score"],
+            cmap="viridis",
+            edgecolor="none",
+        )
         madplot = plt.gcf()
         madplot.savefig(self.projname + "_figures/CFOM.png", dpi=600)
-        # run phenix.emma on top 2 CFOM
+        # run phenix.emma on top 2 CCALL
+        top = df[["res", "sites", "score"]]
+        top = df.head(10)
         (firstres, firstsites, secondres, secondsites) = (
             top.iloc[[0], [0]].values[0],
             top.iloc[[0], [1]].values[0],
@@ -812,39 +855,136 @@ class core:
             for line in infile:
                 if line.startswith("TITL"):
                     words = line.split()
-                    sg = words[-1]
-        print("The space group has been identified as " + sg)
-        phenixemma = open("phenix_emma.sh", "w")
-        phenixemma.write("module load phenix \n")
-        phenixemma.write(
+                    self.sg = words[-1]
+        print("The space group has been identified as " + self.sg)
+        self.emma = os.popen(
             "phenix.emma "
-            + self.path
-            + "/"
-            + self.projname
-            + "/"
-            + str(firstres)
-            + "/"
+            + str(
+                os.path.join(
+                    self.path,
+                    self.projname,
+                    str(firstres),
+                    str(firstsites),
+                    (self.projname + "_fa.pdb "),
+                )
+                + os.path.join(
+                    self.path,
+                    self.projname,
+                    str(secondres),
+                    str(secondsites),
+                    (self.projname + "_fa.pdb"),
+                )
+                + " --tolerance=6 --space_group="
+                + self.sg
+            )
+        ).read()
+        self.emmain = str(
+            "First model - "
+            + str(float(firstres / 10))
+            + " Å with a sites cutoff of "
             + str(firstsites)
-            + "/"
-            + self.projname
-            + "_fa.pdb "
-            + self.path
-            + "/"
-            + self.projname
-            + "/"
-            + str(secondres)
-            + "/"
+            + "\n"
+            + "Second model - "
+            + str(float(secondres / 10))
+            + " Å with a sites cutoff of "
             + str(secondsites)
-            + "/"
-            + self.projname
-            + "_fa.pdb --tolerance=6 --space_group="
-            + sg
-            + " 2>&1 | tee -a phenixemma.log"
         )
-        phenixemma.close()
-        os.chmod("phenix_emma.sh", 0o775)
-        os.system("./phenix_emma.sh")
 
+        # CANT GET EMMA TO WORK IN SUBPROCESS...
+        # emma = subprocess.run(
+        #     [
+        #         "phenix.emma",
+        #         str(
+        #             os.path.join(
+        #                 self.path,
+        #                 self.projname,
+        #                 str(firstres),
+        #                 str(firstsites),
+        #                 (self.projname + "_fa.pdb "),
+        #             )
+        #             + os.path.join(
+        #                 self.path,
+        #                 self.projname,
+        #                 str(secondres),
+        #                 str(secondsites),
+        #                 (self.projname + "_fa.pdb"),
+        #             )
+        #             + " --tolerance=6 --space_group="
+        #             + self.sg
+        #         ),
+        #     ],
+        #     shell=True,
+        #     stdout=subprocess.PIPE,
+        # )
+        # print(emma)
+
+    def writehtml(self):
+        self.html_topten = """
+        <!doctype html>
+        <html>
+        <head>
+            <title>Sagasu - SHELXD Grid</title>
+        </head>
+        <body>
+        <h1 style="text-align: center;"><span style="font-family:courier new,courier,monospace;">Sagasu - SHELXD Grid Search </span></h1>
+
+        <p><span style="font-family:courier new,courier,monospace;">Results for project <strong>{projname}</strong>, <strong>{ntry}</strong> trys with a low resolution limit of <strong>{lowres}</strong> and a high resolution limit of <strong>{highres}</strong>, searching for a number of sites between <strong>{lowsites}</strong> and <strong>{highsites}</strong>.</span></p>
+
+        <hr />
+        <p><span style="font-family:courier new,courier,monospace;"><span style="font-size:18px;"><strong><u>Here are the top 10 hits:</u></strong></span></span></p>
+
+        <p><span style="font-family:courier new,courier,monospace;"><strong>For CCALL:</strong></span></p>
+
+        <p><span style="font-family:courier new,courier,monospace;">{CCALL_tophits}</span></p>
+
+        <p><span style="font-family:courier new,courier,monospace;"><strong>For CCWEAK:</strong></span></p>
+
+        <p><span style="font-family:courier new,courier,monospace;">{CCWEAK_tophits}</span></p>
+
+        <p><span style="font-family:courier new,courier,monospace;"><strong>For CFOM:</strong></span></p>
+
+        <p><span style="font-family:courier new,courier,monospace;">{CFOM_tophits}</span></p>
+
+        <hr />        
+        <p><span style="font-family:courier new,courier,monospace;">phenix.emma output:</span></p>        
+        <p><span style="font-family:courier new,courier,monospace; white-space: pre-line">
+        """.format(
+            projname=self.projname,
+            ntry=str(self.ntry),
+            lowres=str(self.lowres),
+            highres=str(self.highres),
+            lowsites=str(self.lowsites),
+            highsites=str(self.highsites),
+            CCALL_tophits=str(self.topallhtml),
+            CCWEAK_tophits=str(self.topweakhtml),
+            CFOM_tophits=str(self.top_CFOMhtml),
+        )
+
+        with open("sagasu.html", "w") as htmlfile:
+            htmlfile.write(self.html_topten)
+        with open("sagasu.html", "a") as htmlfile:
+            htmlfile.write(self.emmain + "\n")
+            for line in self.emma.splitlines():
+                htmlfile.write(line + "\n")
+            htmlfile.write("</span></p>" + "\n")
+            htmlfile.write(
+                """<p><span style="font-family:courier new,courier,monospace;"><span style="font-size:18px;"><strong><u>Plots:</u></strong></span></span></p>"""
+            )
+            for plot in glob.glob(
+                os.path.join(self.path, (self.projname + "_figures"), "*ML*")
+            ):
+                htmlfile.write(
+                    """
+                <p><img title="{plot}" src="{plot}" style="float: left; border-width: 2px; border-style: solid; width: 420px; height: 320px;" />
+                """.format(
+                        plot=str(plot)
+                    )
+                )
+            htmlfile.write(
+                """</p>
+        </body>
+        </html>"""
+            )
 
 
 if __name__ == "__main__":
@@ -876,13 +1016,18 @@ if __name__ == "__main__":
         print("Analysis running, prepping files...")
         if os.path.exists(os.path.join(path, "inps.pkl")):
             run.readpickle()
-            #to_run = run.cleanup_prev()
-            #pool.starmap(run.results, to_run)
-            clustering_distance_torun, dbscan_torun, hexplots_torun, ccoutliers_torun = run.run_sagasu_analysis()
-            #print("Clustering distance analysis...")
-            #pool.starmap(run.clustering_distance, clustering_distance_torun)
-            #print("DBScan")
-            #pool.starmap(run.analysis, dbscan_torun)
+            # to_run = run.cleanup_prev()
+            # pool.starmap(run.results, to_run)
+            (
+                clustering_distance_torun,
+                dbscan_torun,
+                hexplots_torun,
+                ccoutliers_torun,
+            ) = run.run_sagasu_analysis()
+            # print("Clustering distance analysis...")
+            # pool.starmap(run.clustering_distance, clustering_distance_torun)
+            # print("DBScan")
+            # pool.starmap(run.analysis, dbscan_torun)
             print("Generating hexplots...")
             pool.starmap(run.analysis_2, hexplots_torun)
             print("Running outlier analysis...")
@@ -893,4 +1038,3 @@ if __name__ == "__main__":
             pool.starmap(run.plot_for_ML, to_run_ML)
         else:
             print("No previous run found")
-

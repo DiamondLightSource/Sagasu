@@ -21,7 +21,7 @@ pro_or_ana = str(
 
 if pro_or_ana == "p":
     run = sagasu_core.core()
-    run.get_input()
+    projname, fa_path, highres, lowres, highsites, lowsites, ntry = run.get_input()
     run.writepickle()
     if os.path.exists(os.path.join(path, "inps.pkl")):
         run.readpickle()
@@ -38,13 +38,15 @@ if pro_or_ana == "a" or "p":
         run.readpickle()
         to_run = run.cleanup_prev()
         pool.starmap(run.results, to_run)
-        clustering_distance_torun, dbscan_torun, hexplots_torun, ccoutliers_torun = run.run_sagasu_analysis()
+        clustering_distance_torun, dbscan_torun, hexplots_torun, ccoutliers_torun = (
+            run.run_sagasu_analysis()
+        )
         print("Clustering distance analysis...")
-        #pool.starmap(run.clustering_distance, clustering_distance_torun)
+        # pool.starmap(run.clustering_distance, clustering_distance_torun)
         print("DBScan")
-        #pool.starmap(run.analysis, dbscan_torun)
+        # pool.starmap(run.analysis, dbscan_torun)
         print("Generating hexplots...")
-        #pool.starmap(run.analysis_2, hexplots_torun)
+        # pool.starmap(run.analysis_2, hexplots_torun)
         print("Running outlier analysis...")
         pool.starmap(run.ccalloutliers, ccoutliers_torun)
         pool.starmap(run.ccweakoutliers, ccoutliers_torun)
@@ -53,5 +55,6 @@ if pro_or_ana == "a" or "p":
         to_run_ML = run.for_ML_analysis()
         print("Making ML plots...")
         pool.starmap(run.plot_for_ML, to_run_ML)
+        run.writehtml()
     else:
         print("No previous run found!")
