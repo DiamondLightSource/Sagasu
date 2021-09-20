@@ -1,4 +1,4 @@
-#!/dls_sw/i23/scripts/ctrl_conda python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 @author: Chris
