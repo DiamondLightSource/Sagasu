@@ -919,11 +919,14 @@ class core:
         # print(emma)
 
     def writehtml(self):
-        self.html_topten = """
+        self.html_init = """
         <!doctype html>
         <html>
         <head>
             <title>Sagasu - SHELXD Grid</title>
+            <style>
+            background: linear-gradient(0deg, #e4fffd 0%, #60f3ff 100%);
+            </style>
         </head>
         <body>
         <h1 style="text-align: center;"><span style="font-family:courier new,courier,monospace;">Sagasu - SHELXD Grid Search </span></h1>
@@ -931,6 +934,16 @@ class core:
         <p><span style="font-family:courier new,courier,monospace;">Results for project <strong>{projname}</strong>, <strong>{ntry}</strong> trys with a low resolution limit of <strong>{lowres}</strong> and a high resolution limit of <strong>{highres}</strong>, searching for a number of sites between <strong>{lowsites}</strong> and <strong>{highsites}</strong>.</span></p>
 
         <hr />
+        """.format(
+            projname=self.projname,
+            ntry=str(self.ntry),
+            lowres=str(float(self.lowres / 10)),
+            highres=str(float(self.highres / 10)),
+            lowsites=str(self.lowsites),
+            highsites=str(self.highsites)
+        )
+
+        self.html_topten = """
         <p><span style="font-family:courier new,courier,monospace;"><span style="font-size:18px;"><strong><u>Here are the top 10 hits:</u></strong></span></span></p>
 
         <p><span style="font-family:courier new,courier,monospace;"><strong>For CCALL:</strong></span></p>
@@ -949,20 +962,15 @@ class core:
         <p><span style="font-family:courier new,courier,monospace;">phenix.emma output:</span></p>        
         <p><span style="font-family:courier new,courier,monospace; white-space: pre-line">
         """.format(
-            projname=self.projname,
-            ntry=str(self.ntry),
-            lowres=str(float(self.lowres / 10)),
-            highres=str(float(self.highres / 10)),
-            lowsites=str(self.lowsites),
-            highsites=str(self.highsites),
             CCALL_tophits=str(self.topallhtml),
             CCWEAK_tophits=str(self.topweakhtml),
             CFOM_tophits=str(self.top_CFOMhtml),
         )
 
         with open("sagasu.html", "w") as htmlfile:
-            htmlfile.write(self.html_topten)
+            htmlfile.write(self.html_init + "\n")
         with open("sagasu.html", "a") as htmlfile:
+            htmlfile.write(self.html_topten + "\n")
             htmlfile.write(self.emmain + "\n")
             for line in self.emma.splitlines():
                 htmlfile.write(line + "\n")
@@ -973,23 +981,23 @@ class core:
             )
             htmlfile.write(
                 """
-                <p><img title="{projname} CCALL" src="{projname}_figures/ccall.png" style="float: left; border-width: 2px; border-style: solid; width: 640px; height: 640px;" />
+                <table><tbody><tr>
+                <th><p><img title="{projname} CCALL" src="{projname}_figures/ccall.png" style="float: left; border-width: 2px; border-style: solid; width: 768px; height: 576px;" /></th>
             """.format(
                     projname=self.projname
                 )
             )
             htmlfile.write(
                 """
-                <p><img title="{projname} CCWEAK" src="{projname}_figures/ccweak.png" style="float: left; border-width: 2px; border-style: solid; width: 640px; height: 640px;" />
+                <th><p><img title="{projname} CCWEAK" src="{projname}_figures/ccweak.png" style="float: left; border-width: 2px; border-style: solid; width: 768px; height: 576px;" /></th>
             """.format(
                     projname=self.projname
                 )
             )
             htmlfile.write(
                 """
-                <p><img title="{projname} CFOM" src="{projname}_figures/CFOM.png" style="float: left; border-width: 2px; border-style: solid; width: 640px; height: 640px;" />
-
-                <p style=”clear:left;”></p>            
+                <th><p><img title="{projname} CFOM" src="{projname}_figures/CFOM.png" style="float: left; border-width: 2px; border-style: solid; width: 768px; height: 576px;" /></th>
+                </tr></tbody></table>
             """.format(
                     projname=self.projname
                 )
