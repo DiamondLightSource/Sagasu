@@ -951,8 +951,8 @@ class core:
         """.format(
             projname=self.projname,
             ntry=str(self.ntry),
-            lowres=str(self.lowres),
-            highres=str(self.highres),
+            lowres=str(float(self.lowres/10)),
+            highres=str(float(self.highres/10)),
             lowsites=str(self.lowsites),
             highsites=str(self.highsites),
             CCALL_tophits=str(self.topallhtml),
