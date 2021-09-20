@@ -951,8 +951,8 @@ class core:
         """.format(
             projname=self.projname,
             ntry=str(self.ntry),
-            lowres=str(float(self.lowres/10)),
-            highres=str(float(self.highres/10)),
+            lowres=str(float(self.lowres / 10)),
+            highres=str(float(self.highres / 10)),
             lowsites=str(self.lowsites),
             highsites=str(self.highsites),
             CCALL_tophits=str(self.topallhtml),
@@ -968,7 +968,31 @@ class core:
                 htmlfile.write(line + "\n")
             htmlfile.write("</span></p>" + "\n")
             htmlfile.write(
-                """<p><span style="font-family:courier new,courier,monospace;"><span style="font-size:18px;"><strong><u>Plots:</u></strong></span></span></p>"""
+                """<hr />
+                <p><span style="font-family:courier new,courier,monospace;"><span style="font-size:18px;"><strong><u>Plots:</u></strong></span></span></p>"""
+            )
+            htmlfile.write(
+                """
+                <p><img title="{projname} CCALL" src="{projname}_figures/ccall.png" style="float: left; border-width: 2px; border-style: solid; width: 640px; height: 640px;" />
+            """.format(
+                    projname=self.projname
+                )
+            )
+            htmlfile.write(
+                """
+                <p><img title="{projname} CCWEAK" src="{projname}_figures/ccweak.png" style="float: left; border-width: 2px; border-style: solid; width: 640px; height: 640px;" />
+            """.format(
+                    projname=self.projname
+                )
+            )
+            htmlfile.write(
+                """
+                <p><img title="{projname} CFOM" src="{projname}_figures/CFOM.png" style="float: left; border-width: 2px; border-style: solid; width: 640px; height: 640px;" />
+
+                <p style=”clear:left;”></p>            
+            """.format(
+                    projname=self.projname
+                )
             )
             for plot in glob.glob(
                 os.path.join(self.path, (self.projname + "_figures"), "*ML*")
