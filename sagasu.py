@@ -6,6 +6,7 @@
 import sagasu_core
 import os
 from multiprocessing import Pool
+from halo import Halo
 
 
 path = os.getcwd()
@@ -25,36 +26,56 @@ if pro_or_ana == "p":
     run.writepickle()
     if os.path.exists(os.path.join(path, "inps.pkl")):
         run.readpickle()
-        run.shelx_write()
-        run.run_sagasu_proc()
-        gonext = input("Continue? ")
+        with Halo(
+            text="\nSubmitting jobs",
+            text_color="green",
+            spinner="monkey",
+        ):
+            run.run_sagasu_proc()
+        with Halo(
+            text="\nJobs are running, please be patient and watch the shark",
+            text_color="green",
+            spinner="shark",
+        ):
+            run.drmaa2_check()
     else:
-        print("Processing finished.")
+        pass
 
 if pro_or_ana == "a" or "p":
     run = sagasu_core.core()
-    print("Analysis running, prepping files...")
     if os.path.exists(os.path.join(path, "inps.pkl")):
         run.readpickle()
         to_run = run.cleanup_prev()
-        pool.starmap(run.results, to_run)
-        clustering_distance_torun, dbscan_torun, hexplots_torun, ccoutliers_torun = (
-            run.run_sagasu_analysis()
-        )
-        print("Clustering distance analysis...")
+        with Halo(
+            text="\nPulling out the important stuff", text_color="green", spinner="dots12"
+        ):
+            pool.starmap(run.results, to_run)
+        (
+            clustering_distance_torun,
+            dbscan_torun,
+            hexplots_torun,
+            ccoutliers_torun,
+        ) = run.run_sagasu_analysis()
+        # print("Clustering distance analysis...")
         # pool.starmap(run.clustering_distance, clustering_distance_torun)
-        print("DBScan")
+        # print("DBScan")
         # pool.starmap(run.analysis, dbscan_torun)
-        print("Generating hexplots...")
+        # print("Generating hexplots...")
         # pool.starmap(run.analysis_2, hexplots_torun)
-        print("Running outlier analysis...")
-        pool.starmap(run.ccalloutliers, ccoutliers_torun)
-        pool.starmap(run.ccweakoutliers, ccoutliers_torun)
-        pool.starmap(run.CFOM_PATFOM_analysis, ccoutliers_torun)
-        run.tophits()
-        to_run_ML = run.for_ML_analysis()
-        print("Making ML plots...")
-        pool.starmap(run.plot_for_ML, to_run_ML)
-        run.writehtml()
+        with Halo(text="\nLooking for outliers", text_color="green", spinner="toggle"):
+            pool.starmap(run.ccalloutliers, ccoutliers_torun)
+            pool.starmap(run.ccweakoutliers, ccoutliers_torun)
+            pool.starmap(run.CFOM_PATFOM_analysis, ccoutliers_torun)
+            run.tophits()
+        with Halo(
+            text="\nGenerating pretty pictures", text_color="green", spinner="pong"
+        ):
+            to_run_ML = run.for_ML_analysis()
+            pool.starmap(run.plot_for_ML, to_run_ML)
+        with Halo(
+            text="\nFinished", text_color="green", spinner="smiley"
+        ):
+            run.writehtml()
+        print("\nRun 'firefox sagasu.html' to view results")
     else:
         print("No previous run found!")

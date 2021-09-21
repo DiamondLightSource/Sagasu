@@ -65,6 +65,34 @@ class core:
             self.ntry,
         )
 
+    def drmaa2template(self, workpath, jobname="sagasu"):
+        # envs = {
+        #     'shelx1': '_LMFILES_=/dls_sw/apps/Modules/modulefiles/global/directories:/dls_sw/apps/Modules/modulefiles/R/3.2.2:/dls_sw/apps/Modules/modulefiles/ccp4/7.1.015:/dls_sw/apps/Modules/modulefiles/shelx/ccp4',
+        #     'shelx2': 'LOADEDMODULES=global/directories:R/3.2.2:ccp4/7.1.015:shelx/ccp4',
+        # }
+        jt = JobTemplate(
+            {
+                "job_name": jobname,
+                "job_category": "i23_chris",
+                "remote_command": "/home/i23/bin/Sagasu/shelxd.sh",
+                "args": [str(self.projname + "_fa")],
+                "min_slots": 20,
+                "max_slots": 40,
+                # "job_environment": envs,
+                "working_directory": str(workpath),
+                "output_path": str(workpath),
+                "error_path": str(workpath),
+                "queue_name": "low.q",
+                "implementation_specific": {"uge_jt_pe": "smp",},
+            }
+        )
+        return jt
+
+    def drmaa2_check(self):
+        job_list = [job_info[0] for job_info in self.job_details]
+        self.session.wait_all_started(job_list)
+        self.session.wait_all_terminated(job_list)
+        
     def writepickle(self):
         with open("inps.pkl", "wb") as f:
             pickle.dump(
@@ -144,36 +172,24 @@ class core:
         file_handle.write(file_string)
         file_handle.close()
 
-    def qstat_progress(self):
-        runs = (((self.lowres - 1) - self.highres)) * (self.highsites - self.lowsites)
-        q = subprocess.Popen("qstat", stdout=subprocess.PIPE)
-        q = len(q.stdout.read())
-        print("")
-        pbar = tqdm(desc="Jobs finished", total=int(runs), dynamic_ncols=True)
-        while q > 2:
-            t = subprocess.Popen("qstat", stdout=subprocess.PIPE)
-            q = len(t.stdout.readlines())
-            l = runs - (q - 2)
-            pbar.n = int(l)
-            pbar.refresh()
-            time.sleep(2)
-        else:
-            print("\nDone processing, moving on to analysis")
-
-    def shelx_write(self):
-        shelxjob = open("shelxd_job.sh", "w")
-        shelxjob.write("module load shelx\n")
-        shelxjob.write("shelxd " + self.projname + "_fa")
-        shelxjob.close()
-        os.chmod("shelxd_job.sh", 0o775)
+    # def shelx_write(self):
+    #     shelxjob = open("shelxd_job.sh", "w")
+    #     shelxjob.write("module load shelx\n")
+    #     shelxjob.write("shelxd " + self.projname + "_fa")
+    #     shelxjob.close()
+    #     os.chmod("shelxd_job.sh", 0o775)
 
     def run_sagasu_proc(self):
+        self.session = JobSession()
         os.chdir(self.path)
+        self.job_details = []
         Path(self.projname).mkdir(parents=True, exist_ok=True)
         i = self.highres
         if self.clust == "l":
             tot = (self.lowres - self.highres) * ((self.highsites + 1) - self.lowsites)
             pbar = tqdm(desc="SHELXD", total=tot, dynamic_ncols=True)
+        else:
+            pass
         while not (i >= self.lowres):
             Path(os.path.join(self.projname, str(i))).mkdir(parents=True, exist_ok=True)
             i2 = i / 10
@@ -182,9 +198,6 @@ class core:
                 os.makedirs(os.path.join(self.projname, str(i), str(j)), exist_ok=True)
                 shutil.copy2(self.insin, (os.path.join(self.projname, str(i), str(j))))
                 shutil.copy2(self.hklin, (os.path.join(self.projname, str(i), str(j))))
-                shutil.copy2(
-                    "shelxd_job.sh", (os.path.join(self.projname, str(i), str(j)))
-                )
                 workpath = os.path.join(self.path, self.projname, str(i), str(j))
                 f = os.path.join(
                     self.path, self.projname, str(i), str(j), self.projname + "_fa.ins"
@@ -201,15 +214,9 @@ class core:
                     pbar.refresh()
                     os.chdir(self.path)
                 elif self.clust == "c":
-                    os.system(
-                        "cd "
-                        + workpath
-                        + "; qsub -P i23 -q low.q -l mfree=8G -N sag_"
-                        + str(i)
-                        + "_"
-                        + str(j)
-                        + " -pe smp 40-33 -cwd ./shelxd_job.sh"
-                    )
+                    template = self.drmaa2template(workpath)
+                    job = self.session.run_job(template)
+                    self.job_details.append([job])
                 else:
                     print("error in input...")
                 j = j - 1
@@ -314,27 +321,17 @@ class core:
             i2 = i / 10
             j = self.highsites
             while not (j <= (self.lowsites - 1)):
-                print("Prepping for " + str(i2) + "Å, " + str(j) + " sites")
                 csvfile = os.path.join(
                     self.path,
                     self.projname + "_results/" + str(i) + "_" + str(j) + ".csv",
                 )
                 numbers = str(i) + "_" + str(j)
                 if self.clusteranalysis == "y":
-                    print("***Bayesian Gaussian Mixture Analysis***")
-                    # self.clustering_distance(csvfile, numbers)
                     clustering_distance_torun.append((csvfile, numbers))
-                    print("***DBSCAN Analysis***")
-                    # self.analysis(csvfile, numbers, i, j)
                     dbscan_torun.append((csvfile, numbers, i, j))
-                    # print("***Generating Hexplots***")
-                    # analysis_2(csvfile, numbers, i, j)
                     hexplots_torun.append((csvfile, numbers))
                 else:
                     print("No cluster analysis requested")
-                # print("***Outlier Analysis***")
-                # ccalloutliers(csvfile, i, j)
-                # ccweakoutliers(csvfile, i, j)
                 ccoutliers_torun.append((csvfile, i, j))
                 j = j - 1
             i = i + 1
@@ -349,15 +346,12 @@ class core:
             i2 = i / 10
             j = self.highsites
             while not (j <= (self.lowsites - 1)):
-                # print("Results for " + str(i2) + "Å, " + str(j) + " sites:")
                 csvfile = os.path.join(
                     self.path,
                     self.projname + "_results/" + str(i) + "_" + str(j) + ".csv",
                 )
                 numbers = str(i) + "_" + str(j)
-                # print("***Generating ML Plots***")
                 to_run_ML.append((csvfile, numbers))
-                # plot_for_ML(csvfile, numbers)
                 j = j - 1
             i = i + 1
         return to_run_ML
@@ -587,14 +581,6 @@ class core:
                 + str(corr_PATFOM)
                 + "\n"
             )
-        print(
-            "Best CFOM from",
-            str(resolution / 10),
-            str(sitessearched),
-            "is:",
-            str(top_CFOM),
-            end="\n",
-        )
 
     def ccalloutliers(self, filename, resolution, sitessearched):
         df = pd.read_csv(
@@ -629,13 +615,6 @@ class core:
         mad7 = sum(i > 7 * mad for i in ccallmad)
         mad6 = sum(i > 6 * mad for i in ccallmad)
         mad5 = sum(i > 5 * mad for i in ccallmad)
-        print("number of CCall with CCall - median > 10 * MAD = " + str(mad10))
-        print("number of CCall with CCall - median >  9 * MAD = " + str(mad9))
-        print("number of CCall with CCall - median >  8 * MAD = " + str(mad8))
-        print("number of CCall with CCall - median >  7 * MAD = " + str(mad7))
-        print("number of CCall with CCall - median >  6 * MAD = " + str(mad6))
-        print("number of CCall with CCall - median >  5 * MAD = " + str(mad5))
-        print("Three largest CCall values: " + str(ccallmax))
         allmad = open(self.projname + "_results/ccall.csv", "a")
         allmad.write(
             str(int(resolution) / 10)
@@ -690,14 +669,6 @@ class core:
         mad7 = sum(i > 7 * mad for i in ccweakmad)
         mad6 = sum(i > 6 * mad for i in ccweakmad)
         mad5 = sum(i > 5 * mad for i in ccweakmad)
-        print("number of CCweak with CCweak - median > 10 * MAD = " + str(mad10))
-        print("number of CCweak with CCweak - median >  9 * MAD = " + str(mad9))
-        print("number of CCweak with CCweak - median >  8 * MAD = " + str(mad8))
-        print("number of CCweak with CCweak - median >  7 * MAD = " + str(mad7))
-        print("number of CCweak with CCweak - median >  6 * MAD = " + str(mad6))
-        print("number of CCweak with CCweak - median >  5 * MAD = " + str(mad5))
-        print("Three largest CCweak values: " + str(ccweakmax))
-        print("")
         allmad = open(self.projname + "_results/ccweak.csv", "a")
         allmad.write(
             str(int(resolution) / 10)
@@ -738,13 +709,6 @@ class core:
         top = df.head(10)
         self.topallhtml = top.reset_index(drop=True).to_html()
         self.topall = str(top.reset_index(drop=True))
-        print(
-            """
-        Here are the top 10 hits (ccall):
-
-        """
-        )
-        print(self.topall)
         weak_df = pd.read_csv(
             self.projname + "_results/ccweak.csv",
             sep=",",
@@ -763,13 +727,6 @@ class core:
         top = weak_df.head(10)
         self.topweakhtml = top.reset_index(drop=True).to_html()
         self.topweak = str(top.reset_index(drop=True))
-        print(
-            """
-        Here are the top 10 hits (ccweak):
-
-        """
-        )
-        print(self.topweak)
         cfom_df = pd.read_csv(
             self.projname + "_results/CFOM_PATFOM.csv",
             sep=",",
@@ -784,7 +741,6 @@ class core:
         top = cfom_df.head(10)
         self.top_CFOMhtml = top.reset_index(drop=True).to_html()
         self.top_CFOM = str(top.reset_index(drop=True))
-        print(self.top_CFOM)
         with open("tophits.txt", "w") as outfile:
             outfile.write(self.topall)
             outfile.write("\n")
@@ -856,7 +812,6 @@ class core:
                 if line.startswith("TITL"):
                     words = line.split()
                     self.sg = words[-1]
-        print("The space group has been identified as " + self.sg)
         self.emma = os.popen(
             "phenix.emma "
             + str(
@@ -890,34 +845,6 @@ class core:
             + str(secondsites)
         )
 
-        # CANT GET EMMA TO WORK IN SUBPROCESS...
-        # emma = subprocess.run(
-        #     [
-        #         "phenix.emma",
-        #         str(
-        #             os.path.join(
-        #                 self.path,
-        #                 self.projname,
-        #                 str(firstres),
-        #                 str(firstsites),
-        #                 (self.projname + "_fa.pdb "),
-        #             )
-        #             + os.path.join(
-        #                 self.path,
-        #                 self.projname,
-        #                 str(secondres),
-        #                 str(secondsites),
-        #                 (self.projname + "_fa.pdb"),
-        #             )
-        #             + " --tolerance=6 --space_group="
-        #             + self.sg
-        #         ),
-        #     ],
-        #     shell=True,
-        #     stdout=subprocess.PIPE,
-        # )
-        # print(emma)
-
     def writehtml(self):
         self.html_init = """
         <!doctype html>
@@ -940,7 +867,7 @@ class core:
             lowres=str(float(self.lowres / 10)),
             highres=str(float(self.highres / 10)),
             lowsites=str(self.lowsites),
-            highsites=str(self.highsites)
+            highsites=str(self.highsites),
         )
 
         self.html_topten = """
@@ -958,8 +885,8 @@ class core:
 
         <p><span style="font-family:courier new,courier,monospace;">{CFOM_tophits}</span></p>
 
-        <hr />        
-        <p><span style="font-family:courier new,courier,monospace;">phenix.emma output:</span></p>        
+        <hr />
+        <p><span style="font-family:courier new,courier,monospace;">phenix.emma output:</span></p>
         <p><span style="font-family:courier new,courier,monospace; white-space: pre-line">
         """.format(
             CCALL_tophits=str(self.topallhtml),
@@ -1036,7 +963,7 @@ if __name__ == "__main__":
         run.writepickle()
         if os.path.exists(os.path.join(path, "inps.pkl")):
             run.readpickle()
-            run.shelx_write(projname)
+            # run.shelx_write(projname)
             run.run_sagasu_proc()
         if clust == "c":
             run.qstat_progress(lowres, highres, lowsites, highsites)
@@ -1048,8 +975,6 @@ if __name__ == "__main__":
         print("Analysis running, prepping files...")
         if os.path.exists(os.path.join(path, "inps.pkl")):
             run.readpickle()
-            # to_run = run.cleanup_prev()
-            # pool.starmap(run.results, to_run)
             (
                 clustering_distance_torun,
                 dbscan_torun,
