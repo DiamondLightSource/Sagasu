@@ -74,7 +74,7 @@ class core:
             {
                 "job_name": jobname,
                 "job_category": "i23_chris",
-                "remote_command": "/home/i23/bin/Sagasu/shelxd.sh",
+                "remote_command": "/home/i23user/bin/Sagasu/shelxd.sh",
                 "args": [str(self.projname + "_fa")],
                 "min_slots": 20,
                 "max_slots": 40,
