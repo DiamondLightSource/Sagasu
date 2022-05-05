@@ -74,7 +74,7 @@ class core:
             {
                 "job_name": jobname,
                 "job_category": "i23_chris",
-                "remote_command": "/home/i23user/bin/Sagasu/shelxd.sh",
+                "remote_command": "/dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh",
                 "args": [str(self.projname + "_fa")],
                 "min_slots": 20,
                 "max_slots": 40,
@@ -90,7 +90,9 @@ class core:
 
     def drmaa2_check(self):
         job_list = [job_info[0] for job_info in self.job_details]
+        time.sleep(10)
         self.session.wait_all_started(job_list)
+        time.sleep(10)
         self.session.wait_all_terminated(job_list)
         
     def writepickle(self):
@@ -283,6 +285,7 @@ class core:
         ) as outfile:
             for line in infile:
                 if line.startswith(" Try"):
+                    line.replace("Try", "Try ")
                     outfile.write(",".join(line.split()) + "\n")
         with open(
             self.path
