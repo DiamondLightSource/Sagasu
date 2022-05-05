@@ -603,14 +603,13 @@ class core:
         pd.DataFrame.drop(df, labels="linebeg", axis=1, inplace=True)
         median = df["CCALL"].median()
         arr = df[["CCALL", "CCWEAK"]].to_numpy()
-        cmean = arr.mean(axis=0)
-        csd = arr.std(axis=0)
+        cmean = arr.mean(axis=1)
+        csd = arr.std(axis=1)
         outliermask = ((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & (
             (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
         )
         arr = arr[outliermask]
         mad = np.median(np.sqrt((arr[:, 0] - median) ** 2))
-        ccallmax = heapq.nlargest(3, arr[:, 0])
         ccallmad = arr[:, 0] - median
         mad10 = sum(i > 10 * mad for i in ccallmad)
         mad9 = sum(i > 9 * mad for i in ccallmad)
@@ -664,7 +663,6 @@ class core:
         )
         arr = arr[outliermask]
         mad = np.median(np.sqrt((arr[:, 1] - median) ** 2))
-        ccweakmax = heapq.nlargest(3, arr[:, 1])
         ccweakmad = arr[:, 1] - median
         mad10 = sum(i > 10 * mad for i in ccweakmad)
         mad9 = sum(i > 9 * mad for i in ccweakmad)
