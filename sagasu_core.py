@@ -813,6 +813,7 @@ class core:
                 if line.startswith("TITL"):
                     words = line.split()
                     self.sg = words[-1]
+        os.system("module load phenix")
         self.emma = os.popen(
             "phenix.emma "
             + str(
