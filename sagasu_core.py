@@ -1,4 +1,4 @@
-#!/dls_sw/i23/scripts/ctrl_conda python3
+#!/dls/science/groups/i23/pyenvs/ctrl_conda python3
 # -*- coding: utf-8 -*-
 """
 Created on Fri Mar 13 14:48:45 2020
@@ -94,7 +94,7 @@ class core:
         self.session.wait_all_started(job_list)
         time.sleep(10)
         self.session.wait_all_terminated(job_list)
-        
+
     def writepickle(self):
         with open("inps.pkl", "wb") as f:
             pickle.dump(
@@ -605,9 +605,12 @@ class core:
         arr = df[["CCALL", "CCWEAK"]].to_numpy()
         cmean = arr.mean(axis=1)
         csd = arr.std(axis=1)
-        outliermask = ((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & (
-            (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
-        )
+        # outliermask = ((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & (
+        #     (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
+        # )
+        # chaging outlier mask to remove anything below the centroid in either direction
+        outliermask = ((arr[:, 0]) > (cmean[0])) & (
+            (arr[:, 1]) > (cmean[1]))
         arr = arr[outliermask]
         mad = np.median(np.sqrt((arr[:, 0] - median) ** 2))
         ccallmad = arr[:, 0] - median
@@ -931,8 +934,8 @@ class core:
                     projname=self.projname
                 )
             )
-            for plot in glob.glob(
-                os.path.join(self.path, (self.projname + "_figures"), "*ML*")
+            for plot in sorted(
+                glob.glob(os.path.join(self.path, (self.projname + "_figures"), "*ML*"))
             ):
                 htmlfile.write(
                     """
@@ -951,49 +954,49 @@ class core:
 if __name__ == "__main__":
     path = os.getcwd()
     print("You are here:", path)
-    pool = Pool(os.cpu_count() - 1)
-    print("Using ", str(os.cpu_count() - 1), "CPU cores")
-    pro_or_ana = str(
-        input(
-            "Would you like to run (p)rocessing and analysis or just (a)nalysis: "
-        ).lower()
-    )
+    # pool = Pool(os.cpu_count() - 1)
+    # print("Using ", str(os.cpu_count() - 1), "CPU cores")
+    # pro_or_ana = str(
+    #     input(
+    #         "Would you like to run (p)rocessing and analysis or just (a)nalysis: "
+    #     ).lower()
+    # )
 
-    if pro_or_ana == "p":
-        run = core()
-        run.get_input()
-        run.writepickle()
-        if os.path.exists(os.path.join(path, "inps.pkl")):
-            run.readpickle()
-            # run.shelx_write(projname)
-            run.run_sagasu_proc()
-        if clust == "c":
-            run.qstat_progress(lowres, highres, lowsites, highsites)
-        else:
-            print("Processing finished.")
+    # if pro_or_ana == "p":
+    #     run = core()
+    #     run.get_input()
+    #     run.writepickle()
+    #     if os.path.exists(os.path.join(path, "inps.pkl")):
+    #         run.readpickle()
+    #         # run.shelx_write(projname)
+    #         run.run_sagasu_proc()
+    #     if clust == "c":
+    #         run.qstat_progress(lowres, highres, lowsites, highsites)
+    #     else:
+    #         print("Processing finished.")
 
-    if pro_or_ana == "a" or "p":
-        run = core()
-        print("Analysis running, prepping files...")
-        if os.path.exists(os.path.join(path, "inps.pkl")):
-            run.readpickle()
-            (
-                clustering_distance_torun,
-                dbscan_torun,
-                hexplots_torun,
-                ccoutliers_torun,
-            ) = run.run_sagasu_analysis()
-            # print("Clustering distance analysis...")
-            # pool.starmap(run.clustering_distance, clustering_distance_torun)
-            # print("DBScan")
-            # pool.starmap(run.analysis, dbscan_torun)
-            print("Generating hexplots...")
-            pool.starmap(run.analysis_2, hexplots_torun)
-            print("Running outlier analysis...")
-            pool.starmap(run.ccalloutliers, ccoutliers_torun)
-            pool.starmap(run.ccweakoutliers, ccoutliers_torun)
-            run.tophits()
-            to_run_ML = run.for_ML_analysis()
-            pool.starmap(run.plot_for_ML, to_run_ML)
-        else:
-            print("No previous run found")
+    # if pro_or_ana == "a" or "p":
+    #     run = core()
+    #     print("Analysis running, prepping files...")
+    #     if os.path.exists(os.path.join(path, "inps.pkl")):
+    #         run.readpickle()
+    #         (
+    #             clustering_distance_torun,
+    #             dbscan_torun,
+    #             hexplots_torun,
+    #             ccoutliers_torun,
+    #         ) = run.run_sagasu_analysis()
+    #         # print("Clustering distance analysis...")
+    #         # pool.starmap(run.clustering_distance, clustering_distance_torun)
+    #         # print("DBScan")
+    #         # pool.starmap(run.analysis, dbscan_torun)
+    #         print("Generating hexplots...")
+    #         pool.starmap(run.analysis_2, hexplots_torun)
+    #         print("Running outlier analysis...")
+    #         pool.starmap(run.ccalloutliers, ccoutliers_torun)
+    #         pool.starmap(run.ccweakoutliers, ccoutliers_torun)
+    #         run.tophits()
+    #         to_run_ML = run.for_ML_analysis()
+    #         pool.starmap(run.plot_for_ML, to_run_ML)
+    #     else:
+    #         print("No previous run found")
