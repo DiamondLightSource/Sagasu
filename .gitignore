@@ -15,3 +15,6 @@ sagasu.log
 inps.pkl
 __pycache__/sagasu_core.cpython-37.pyc
 __pycache__/sagasu_core.cpython-38.pyc
+.DS_Store
+cas3/.DS_Store
+h10_g11/.DS_Store
