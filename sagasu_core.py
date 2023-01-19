@@ -374,7 +374,7 @@ class core:
                 "PATFOM",
             ],
         )
-        plt.scatter(df["CCWEAK"], df["CCALL"], c=df["PATFOM"], cmap="Blues", marker="o")
+        plt.scatter(df["CCWEAK"], df["CCALL"], marker="o")
         # plt.axis("off")
         plt.draw()
         ccallvsccweak = plt.gcf()
