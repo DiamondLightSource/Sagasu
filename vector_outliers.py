@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pylab as plt
+import plotly.express as px
+import plotly.tools as ptls
 
 def ccalloutliers(filename, resolution, sitessearched):
     df = pd.read_csv(
@@ -17,7 +19,12 @@ def ccalloutliers(filename, resolution, sitessearched):
             "PATFOM",
         ],
     )
-    pd.DataFrame.drop(df, labels=["linebeg", "CPUNO", "BEST", "TRY", "CFOM", "PATFOM"] , axis=1, inplace=True)
+    pd.DataFrame.drop(
+        df,
+        labels=["linebeg", "CPUNO", "BEST", "TRY", "CFOM", "PATFOM"],
+        axis=1,
+        inplace=True,
+    )
     ccall_mean = df["CCALL"].mean()
     ccweak_mean = df["CCWEAK"].mean()
     df["CCALL_VEC"] = df["CCALL"] - ccall_mean
@@ -27,35 +34,46 @@ def ccalloutliers(filename, resolution, sitessearched):
     df["VEC_DIFF"] = np.absolute(df["CCALL_VEC"] - df["CCWEAK_VEC"])
     df["COMB_VEC"] = np.sqrt(np.square(df["CCALL_VEC"]) + np.square(df["CCWEAK_VEC"]))
     df["NORM_VEC_DIFF"] = (df["VEC_DIFF"] / df["VEC_DIFF"].abs().max()) + 0.000001
-    df["NORM_COMB_VEC"] = (df["COMB_VEC"] / df["COMB_VEC"].abs().max()) + 0.000001 
-    #df["WEIGHTED"] = df["NORM_COMB_VEC"] / df["NORM_VEC_DIFF"]
+    df["NORM_COMB_VEC"] = (df["COMB_VEC"] / df["COMB_VEC"].abs().max()) + 0.000001
+    # df["WEIGHTED"] = df["NORM_COMB_VEC"] / df["NORM_VEC_DIFF"]
     df["WEIGHTED"] = np.power(df["NORM_COMB_VEC"], 18) / np.cbrt(df["NORM_VEC_DIFF"])
-    print(df)
-    plt.scatter(df["CCWEAK"], df["CCALL"], c=df["WEIGHTED"], cmap="Blues", marker="o")
-    plt.show()
-    # allmad = open("vector_all.csv", "a")
-    # allmad.write(
-    #     str(int(resolution) / 10)
-    #     + ","
-    #     + str(sitessearched)
-    #     + ","
-    #     + str(mad5)
-    #     + ","
-    #     + str(mad6)
-    #     + ","
-    #     + str(mad7)
-    #     + ","
-    #     + str(mad8)
-    #     + ","
-    #     + str(mad9)
-    #     + ","
-    #     + str(mad10)
-    #     + "\n"
-    # )
-    # allmad.close()
+    # plt.scatter(df["CCWEAK"], df["CCALL"], c=df["WEIGHTED"], cmap="Blues", marker="o")
+    # plt.show()
+    df = df[df["WEIGHTED"] > 0.1]
+    df["RES"] = resolution / 10
+    df["SITES"] = sitessearched
+    # print(df)
+    return df
+
 
 if __name__ == "__main__":
-    for x in range(30,45):
-        for y in range(20,65):
+    all_data = pd.DataFrame()
+    for x in range(30, 46):
+        for y in range(3, 10):
             name = str(x) + "_" + str(y) + ".csv"
-            ccalloutliers(name, x, y)
+            data = ccalloutliers(name, x, y)
+            all_data = pd.concat([all_data, data], axis=0, ignore_index=True)
+            print(f"Res - {x / 10}   Sites - {y}")
+    # plt.scatter(all_data["CCWEAK"], all_data["CCALL"], c=all_data["WEIGHTED"], cmap="Blues", marker="o")
+    all_data.sort_values(by=["COMB_VEC"], axis=0, inplace=True, ascending=False)
+    print(all_data)
+    customdata = np.stack((all_data["RES"], all_data["SITES"], all_data["COMB_VEC"]), axis=1)
+    fig = px.scatter(all_data, x="CCWEAK", y="CCALL", color="COMB_VEC", color_continuous_scale='Bluered_r')
+    hovertemplate = (
+        "Res: %{customdata[0]} Å<br>"
+        + "Sites: %{customdata[1]}<br>"
+        + "Distance: %{customdata[2]:,.3f}<br>"
+        + "CCWeak: %{x} <br>"
+        + "CCAll: %{y}"
+        + "<extra></extra>"
+    )
+    fig.update_traces(customdata=customdata, hovertemplate=hovertemplate)
+    fig.write_html("output.html")
+    fig.show()
+    # plt.colorbar()
+    # plt.savefig("out2.png")
+
+
+# make a normalised interactive plot with all of the points on
+# zoomable and when you hover over a point show the res and sites
+#
