@@ -66,16 +66,14 @@ if pro_or_ana == "a" or "p":
             pool.starmap(run.ccalloutliers, ccoutliers_torun)
             pool.starmap(run.ccweakoutliers, ccoutliers_torun)
             pool.starmap(run.CFOM_PATFOM_analysis, ccoutliers_torun)
+            run.vectoroutliers()           
             run.tophits()
         with Halo(
             text="\nGenerating pretty pictures", text_color="green", spinner="pong"
         ):
             to_run_ML = run.for_ML_analysis()
             pool.starmap(run.plot_for_ML, to_run_ML)
-        with Halo(
-            text="\nFinished", text_color="green", spinner="smiley"
-        ):
-            run.writehtml()
+        run.writehtml()
         print("\nRun 'firefox sagasu.html' to view results")
     else:
         print("No previous run found!")

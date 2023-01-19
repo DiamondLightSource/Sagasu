@@ -13,12 +13,11 @@ from matplotlib.patches import Ellipse
 from sklearn.mixture import BayesianGaussianMixture as bgm
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 import numpy as np
 import math
 import pickle
 import glob
-
-# from cuml import DBSCAN as cumlDBSCAN
 from sklearn.cluster import DBSCAN
 import heapq
 from mpl_toolkits.mplot3d import Axes3D
@@ -609,8 +608,7 @@ class core:
         #     (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
         # )
         # chaging outlier mask to remove anything below the centroid in either direction
-        outliermask = ((arr[:, 0]) > (cmean[0])) & (
-            (arr[:, 1]) > (cmean[1]))
+        outliermask = ((arr[:, 0]) > (cmean[0])) & ((arr[:, 1]) > (cmean[1]))
         arr = arr[outliermask]
         mad = np.median(np.sqrt((arr[:, 0] - median) ** 2))
         ccallmad = arr[:, 0] - median
@@ -693,6 +691,77 @@ class core:
             + "\n"
         )
         allmad.close()
+
+    def vectoroutliers_analysis(self, filename, resolution, sitessearched):
+        df = pd.read_csv(
+            filename,
+            sep=",",
+            names=[
+                "linebeg",
+                "TRY",
+                "CPUNO",
+                "CCALL",
+                "CCWEAK",
+                "CFOM",
+                "BEST",
+                "PATFOM",
+            ],
+        )
+        pd.DataFrame.drop(
+            df,
+            labels=["linebeg", "CPUNO", "BEST", "TRY", "CFOM", "PATFOM"],
+            axis=1,
+            inplace=True,
+        )
+        ccall_mean = df["CCALL"].mean()
+        ccweak_mean = df["CCWEAK"].mean()
+        df["CCALL_VEC"] = df["CCALL"] - ccall_mean
+        df["CCWEAK_VEC"] = df["CCWEAK"] - ccweak_mean
+        df = df[df["CCALL_VEC"] > 0]
+        df = df[df["CCWEAK_VEC"] > 0]
+        df["VEC_DIFF"] = np.absolute(df["CCALL_VEC"] - df["CCWEAK_VEC"])
+        df["COMB_VEC"] = np.sqrt(
+            np.square(df["CCALL_VEC"]) + np.square(df["CCWEAK_VEC"])
+        )
+        df["NORM_VEC_DIFF"] = (df["VEC_DIFF"] / df["VEC_DIFF"].abs().max()) + 0.000001
+        df["NORM_COMB_VEC"] = (df["COMB_VEC"] / df["COMB_VEC"].abs().max()) + 0.000001
+        df["WEIGHTED"] = np.power(df["NORM_COMB_VEC"], 18) / np.cbrt(
+            df["NORM_VEC_DIFF"]
+        )
+        df = df[df["WEIGHTED"] > 0.1]
+        df["RES"] = resolution / 10
+        df["SITES"] = sitessearched
+        return df
+
+    def vectoroutliers(self):
+        all_data = pd.DataFrame()
+        for resrange in range(self.highres, self.lowres + 1):
+            for siterange in range(self.lowsites, self.highsites + 1):
+                filename = os.path.join(
+                    self.path,
+                    self.projname
+                    + "_results/"
+                    + str(resrange)
+                    + "_"
+                    + str(siterange)
+                    + ".csv",
+                )
+                data = self.vectoroutliers_analysis(filename, resrange, siterange)
+                all_data = pd.concat([all_data, data], axis=0, ignore_index=True)
+        all_data.sort_values(by=["COMB_VEC"], axis=0, inplace=True, ascending=False)
+        customdata = np.stack((all_data["RES"], all_data["SITES"], all_data["COMB_VEC"]), axis=1)
+        fig = px.scatter(all_data, x="CCWEAK", y="CCALL", color="COMB_VEC", color_continuous_scale='Bluered_r')
+        hovertemplate = (
+            "Res: %{customdata[0]} Å<br>"
+            + "Sites: %{customdata[1]}<br>"
+            + "Distance: %{customdata[2]:,.3f}<br>"
+            + "CCWeak: %{x} <br>"
+            + "CCAll: %{y}"
+            + "<extra></extra>"
+        )
+        fig.update_traces(customdata=customdata, hovertemplate=hovertemplate)
+        fig.write_html(self.projname + "_figures/vectoroutliers.html")
+       
 
     def tophits(self):
         df = pd.read_csv(

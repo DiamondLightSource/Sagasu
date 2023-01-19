@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pylab as plt
 import plotly.express as px
-import plotly.tools as ptls
 
 def ccalloutliers(filename, resolution, sitessearched):
     df = pd.read_csv(
@@ -72,8 +71,3 @@ if __name__ == "__main__":
     fig.show()
     # plt.colorbar()
     # plt.savefig("out2.png")
-
-
-# make a normalised interactive plot with all of the points on
-# zoomable and when you hover over a point show the res and sites
-#
