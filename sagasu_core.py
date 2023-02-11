@@ -1,9 +1,4 @@
 #!/dls/science/groups/i23/pyenvs/ctrl_conda python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Mar 13 14:48:45 2020
-@author: Christian M. Orr
-"""
 
 from datetime import datetime
 import os
@@ -19,7 +14,6 @@ import math
 import pickle
 import glob
 from sklearn.cluster import DBSCAN
-import heapq
 from mpl_toolkits.mplot3d import Axes3D
 import shutil
 from pathlib import Path
@@ -29,6 +23,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 import drmaa2
 from drmaa2 import JobSession, JobTemplate, JobInfo, Drmaa2Exception
+import prasa
 
 
 sns.set()
@@ -47,6 +42,8 @@ class core:
         self.highsites = int(input("Maximum number of sites to search: "))
         self.lowsites = int(input("Minimum number of sites to search: "))
         self.ntry = int(input("Number of trials: "))
+        self.prasa_datain = input("HKL/mtz/sca input file for prasa: ")
+        self.atomin = input("Anomalous scatterer: ")
         self.clust = str(input("Run on (c)luster or (l)ocal machine? c/l ")).lower()
         self.clusteranalysis = str(
             input("Run cluster analysis after (time consuming)? y/n ")
@@ -64,28 +61,48 @@ class core:
             self.ntry,
         )
 
-    def drmaa2template(self, workpath, jobname="sagasu"):
-        # envs = {
-        #     'shelx1': '_LMFILES_=/dls_sw/apps/Modules/modulefiles/global/directories:/dls_sw/apps/Modules/modulefiles/R/3.2.2:/dls_sw/apps/Modules/modulefiles/ccp4/7.1.015:/dls_sw/apps/Modules/modulefiles/shelx/ccp4',
-        #     'shelx2': 'LOADEDMODULES=global/directories:R/3.2.2:ccp4/7.1.015:shelx/ccp4',
-        # }
+    def drmaa2template(self, workpath, site):
         jt = JobTemplate(
             {
-                "job_name": jobname,
+                "job_name": "sagasu",
                 "job_category": "i23_chris",
                 "remote_command": "/dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh",
                 "args": [str(self.projname + "_fa")],
                 "min_slots": 20,
                 "max_slots": 40,
-                # "job_environment": envs,
                 "working_directory": str(workpath),
                 "output_path": str(workpath),
                 "error_path": str(workpath),
                 "queue_name": "low.q",
-                "implementation_specific": {"uge_jt_pe": "smp",},
+                "implementation_specific": {
+                    "uge_jt_pe": "smp",
+                },
             }
         )
-        return jt
+        prasa_jt = JobTemplate(
+            {
+                "job_name": "prasa",
+                "job_category": "i23_chris",
+                "remote_command": "/dls/science/groups/i23/scripts/chris/Sagasu/runprasa.py",
+                "args": [
+                    str(self.atomin),
+                    str(site),
+                    str(self.ntry),
+                    str(self.lowres),
+                    str(self.highres),
+                ],
+                "min_slots": 20,
+                "max_slots": 40,
+                "working_directory": str(workpath),
+                "output_path": str(workpath),
+                "error_path": str(workpath),
+                "queue_name": "low.q",
+                "implementation_specific": {
+                    "uge_jt_pe": "smp",
+                },
+            }
+        )
+        return jt, prasa_jt
 
     def drmaa2_check(self):
         job_list = [job_info[0] for job_info in self.job_details]
@@ -173,12 +190,36 @@ class core:
         file_handle.write(file_string)
         file_handle.close()
 
-    # def shelx_write(self):
-    #     shelxjob = open("shelxd_job.sh", "w")
-    #     shelxjob.write("module load shelx\n")
-    #     shelxjob.write("shelxd " + self.projname + "_fa")
-    #     shelxjob.close()
-    #     os.chmod("shelxd_job.sh", 0o775)
+    def prasa_prep(self):
+        os.system("module load ccp4")
+        if self.prasa_datain.endswith(".hkl" or ".HKL"):
+            self.pointless = (
+                "pointless HKLOUT pointless.mtz HKLIN "
+                + str(self.prasa_datain)
+                + " > /dev/null 2>&1"
+            )
+        elif self.prasa_datain.endswith(".sca" or ".SCA"):
+            self.pointless = "pointless HKLOUT pointless.mtz SCAIN " + str(
+                self.prasa_datain + " > /dev/null 2>&1"
+            )
+        else:
+            print("\nNo data given? Guessing...\n")
+            self.pointless = (
+                f"pointless HKLOUT pointless.mtz HKLIN "
+                + str(self.prasa_datain)
+                + " > /dev/null 2>&1"
+            )
+        os.system(str(self.pointless))
+        os.system(
+            """
+aimless HKLIN pointless.mtz HKLOUT aimless.mtz > /dev/null 2>&1 << eof
+ANOMALOUS ON
+eof
+                  """
+        )
+        os.system(
+            "ctruncate -hklin aimless.mtz -hklout truncate.mtz -colin '/*/*/[I(+),SIGI(+),I(-),SIGI(-)]' > /dev/null 2>&1"
+        )
 
     def run_sagasu_proc(self):
         self.session = JobSession()
@@ -215,12 +256,23 @@ class core:
                     pbar.refresh()
                     os.chdir(self.path)
                 elif self.clust == "c":
-                    template = self.drmaa2template(workpath)
+                    template, _ = self.drmaa2template(workpath)
                     job = self.session.run_job(template)
                     self.job_details.append([job])
                 else:
                     print("error in input...")
                 j = j - 1
+            if self.clust == "c":
+                os.makedirs(
+                    os.path.join(self.projname, str(i), "_prasa"), exist_ok=True
+                )
+                workpath = os.path.join(self.path, self.projname, str(i), "_prasa")
+                shutil.copy2("truncate.mtz", (os.path.join(self.projname, str(i), "_prasa")))
+                _, prasa_template = self.drmaa2template(workpath, str(i))
+                job = self.session.run_job(prasa_template)
+                self.job_details.append([job])
+            else:
+                pass
             i = i + 1
 
     def cleanup_prev(self):
@@ -251,7 +303,6 @@ class core:
                     + "_fa.lst",
                 )
                 self.torun.append((lstfile, i, j))
-                # results(lstfile, self.path, self.projname, i, j)
                 j = j - 1
             i = i + 1
         torun = self.torun
@@ -735,8 +786,8 @@ class core:
 
     def vectoroutliers(self):
         all_data = pd.DataFrame()
-        for resrange in range(self.highres, self.lowres + 1):
-            for siterange in range(self.lowsites, self.highsites + 1):
+        for resrange in range(self.highres, self.lowres):
+            for siterange in range(self.lowsites, self.highsites):
                 filename = os.path.join(
                     self.path,
                     self.projname
@@ -749,8 +800,16 @@ class core:
                 data = self.vectoroutliers_analysis(filename, resrange, siterange)
                 all_data = pd.concat([all_data, data], axis=0, ignore_index=True)
         all_data.sort_values(by=["COMB_VEC"], axis=0, inplace=True, ascending=False)
-        customdata = np.stack((all_data["RES"], all_data["SITES"], all_data["COMB_VEC"]), axis=1)
-        fig = px.scatter(all_data, x="CCWEAK", y="CCALL", color="COMB_VEC", color_continuous_scale='Bluered_r')
+        customdata = np.stack(
+            (all_data["RES"], all_data["SITES"], all_data["COMB_VEC"]), axis=1
+        )
+        fig = px.scatter(
+            all_data,
+            x="CCWEAK",
+            y="CCALL",
+            color="COMB_VEC",
+            color_continuous_scale="Bluered_r",
+        )
         hovertemplate = (
             "Res: %{customdata[0]} Å<br>"
             + "Sites: %{customdata[1]}<br>"
@@ -761,7 +820,6 @@ class core:
         )
         fig.update_traces(customdata=customdata, hovertemplate=hovertemplate)
         fig.write_html(self.projname + "_figures/vectoroutliers.html")
-       
 
     def tophits(self):
         df = pd.read_csv(
@@ -1018,54 +1076,3 @@ class core:
         </body>
         </html>"""
             )
-
-
-if __name__ == "__main__":
-    path = os.getcwd()
-    print("You are here:", path)
-    # pool = Pool(os.cpu_count() - 1)
-    # print("Using ", str(os.cpu_count() - 1), "CPU cores")
-    # pro_or_ana = str(
-    #     input(
-    #         "Would you like to run (p)rocessing and analysis or just (a)nalysis: "
-    #     ).lower()
-    # )
-
-    # if pro_or_ana == "p":
-    #     run = core()
-    #     run.get_input()
-    #     run.writepickle()
-    #     if os.path.exists(os.path.join(path, "inps.pkl")):
-    #         run.readpickle()
-    #         # run.shelx_write(projname)
-    #         run.run_sagasu_proc()
-    #     if clust == "c":
-    #         run.qstat_progress(lowres, highres, lowsites, highsites)
-    #     else:
-    #         print("Processing finished.")
-
-    # if pro_or_ana == "a" or "p":
-    #     run = core()
-    #     print("Analysis running, prepping files...")
-    #     if os.path.exists(os.path.join(path, "inps.pkl")):
-    #         run.readpickle()
-    #         (
-    #             clustering_distance_torun,
-    #             dbscan_torun,
-    #             hexplots_torun,
-    #             ccoutliers_torun,
-    #         ) = run.run_sagasu_analysis()
-    #         # print("Clustering distance analysis...")
-    #         # pool.starmap(run.clustering_distance, clustering_distance_torun)
-    #         # print("DBScan")
-    #         # pool.starmap(run.analysis, dbscan_torun)
-    #         print("Generating hexplots...")
-    #         pool.starmap(run.analysis_2, hexplots_torun)
-    #         print("Running outlier analysis...")
-    #         pool.starmap(run.ccalloutliers, ccoutliers_torun)
-    #         pool.starmap(run.ccweakoutliers, ccoutliers_torun)
-    #         run.tophits()
-    #         to_run_ML = run.for_ML_analysis()
-    #         pool.starmap(run.plot_for_ML, to_run_ML)
-    #     else:
-    #         print("No previous run found")
