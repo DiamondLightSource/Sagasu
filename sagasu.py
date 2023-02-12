@@ -27,6 +27,7 @@ if pro_or_ana == "p":
     if os.path.exists(os.path.join(path, "inps.pkl")):
         run.readpickle()
         run.prasa_prep()
+        run.shelxd_prep()
         with Halo(
             text="\nSubmitting jobs",
             text_color="green",

@@ -19,11 +19,9 @@ import shutil
 from pathlib import Path
 import subprocess
 import time
-from tqdm import tqdm
 from multiprocessing import Pool
 import drmaa2
 from drmaa2 import JobSession, JobTemplate, JobInfo, Drmaa2Exception
-import prasa
 
 
 sns.set()
@@ -35,8 +33,11 @@ class core:
         self.path = os.getcwd()
 
     def get_input(self):
-        self.projname = input("Name of project (SHELX prefix): ")
-        self.fa_path = input("Path to SHELXC outputs: ")
+        self.projname = input("Name of project: ")
+        self.unitcell = str(input("Unit cell a b c al be ga: "))
+        self.spacegroup = str(input("Spacegroup eg. P212121"))
+        #self.fa_path = input("Path to SHELXC outputs: ")
+        self.fa_path = os.getcwd()
         self.highres = int(10 * float(input("High resolution cutoff for grid: ")))
         self.lowres = int(10 * float(input("Low resolution cutoff for grid: ")))
         self.highsites = int(input("Maximum number of sites to search: "))
@@ -60,7 +61,8 @@ class core:
             self.lowsites,
             self.ntry,
         )
-
+# prasa part is not working, something to do with running the bash commands from within python script
+# answer may be to write prasa file and change things like with shelxd ins file
     def drmaa2template(self, workpath, site):
         jt = JobTemplate(
             {
@@ -190,6 +192,21 @@ class core:
         file_handle.write(file_string)
         file_handle.close()
 
+    def shelxd_prep(self):
+        os.system("module load ccp4")
+        os.system(f"""
+shelxc {self.projname} <<EOF
+SAD aimless.sca
+SFAC {self.atomin}
+CELL {self.unitcell}
+SPAG {self.spacegroup}
+SHEL 999 {str(self.highres)}
+FIND {str(self.lowsites)}
+MIND -1.5
+FRES 5
+EOF
+                  """)
+
     def prasa_prep(self):
         os.system("module load ccp4")
         if self.prasa_datain.endswith(".hkl" or ".HKL"):
@@ -217,6 +234,7 @@ ANOMALOUS ON
 eof
                   """
         )
+        os.system("mtz2sca aimless.mtz")
         os.system(
             "ctruncate -hklin aimless.mtz -hklout truncate.mtz -colin '/*/*/[I(+),SIGI(+),I(-),SIGI(-)]' > /dev/null 2>&1"
         )
@@ -229,7 +247,6 @@ eof
         i = self.highres
         if self.clust == "l":
             tot = (self.lowres - self.highres) * ((self.highsites + 1) - self.lowsites)
-            pbar = tqdm(desc="SHELXD", total=tot, dynamic_ncols=True)
         else:
             pass
         while not (i >= self.lowres):
@@ -252,11 +269,9 @@ eof
                     subprocess.run(
                         ["shelxd", self.projname + "_fa"], stdout=subprocess.PIPE
                     )
-                    pbar.update(1)
-                    pbar.refresh()
                     os.chdir(self.path)
                 elif self.clust == "c":
-                    template, _ = self.drmaa2template(workpath)
+                    template, _ = self.drmaa2template(workpath, str(i))
                     job = self.session.run_job(template)
                     self.job_details.append([job])
                 else:

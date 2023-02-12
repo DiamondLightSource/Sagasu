@@ -1,4 +1,4 @@
-#!/dls/science/groups/i23/pyenvs/ctrl_conda python3
+#!/dls/science/groups/i23/pyenvs/ctrl_conda/bin/python
 import os
 import sys
 import numpy as np
@@ -25,7 +25,7 @@ eof
             ''')
     
 def prasa():
-    os.system(f"prasa -mtzin afro.mtz -colin-fo */*/[EA,SIGEA] -atom {atomin} -natoms {sitesin} -chargeflip 2 -ncycles 200 -pdbout prasa.pdb -natoms {natoms} -minpeaks {minpeaks} -ntrials {trialsin} -maxstatrescut {highres} -minstatrescut {lowres} -numthreads {str(os.cpu_count)} > prasaout.txt")
+    os.system(f"prasa -mtzin afro.mtz -colin-fo */*/[EA,SIGEA] -atom {atomin} -natoms {sitesin} -chargeflip 2 -ncycles 200 -pdbout prasa.pdb -natoms {natoms} -minpeaks {minpeaks} -ntrials {trialsin} -maxstatrescut {highres} -minstatrescut {lowres} -numthreads {str(os.cpu_count)}")
     
 afro()
 prasa()
