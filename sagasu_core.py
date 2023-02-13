@@ -10,12 +10,14 @@ import plotly.express as px
 import numpy as np
 import pickle
 import glob
-#from mpl_toolkits.mplot3d import Axes3D
+
+# from mpl_toolkits.mplot3d import Axes3D
 import shutil
 from pathlib import Path
 import subprocess
 import time
-#import drmaa2
+
+# import drmaa2
 from drmaa2 import JobSession, JobTemplate, JobInfo, Drmaa2Exception
 
 
@@ -85,14 +87,15 @@ class core:
                 "job_name": "afro_prasa",
                 "job_category": "i23_chris",
                 "remote_command": "/dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh",
-                "args": [f"{str(self.atomin)}", #$1
-                    f"{str(self.midsites)}", #$2
-                    f"{str(rs)}", #$3
-                    f"{str(self.ntry)}", #$4
-                    f"{lr}", #$5
-                    f"{hr}", #$6
-                    f"{str(self.highsites)}", #$7
-                    f"{str(self.lowsites)}", #$8
+                "args": [
+                    f"{str(self.atomin)}",  # $1
+                    f"{str(self.midsites)}",  # $2
+                    f"{str(rs)}",  # $3
+                    f"{str(self.ntry)}",  # $4
+                    f"{lr}",  # $5
+                    f"{hr}",  # $6
+                    f"{str(self.highsites)}",  # $7
+                    f"{str(self.lowsites)}",  # $8
                 ],
                 "min_slots": 20,
                 "max_slots": 40,
@@ -104,7 +107,6 @@ class core:
             }
         )
         return afroprasa_jt
-               
 
     def drmaa2_check(self):
         job_list = [job_info[0] for job_info in self.job_details]
@@ -229,7 +231,8 @@ EOF
                 + " > /dev/null 2>&1"
             )
         os.system(str(self.pointless))
-        os.system("""
+        os.system(
+            """
 aimless HKLIN pointless.mtz HKLOUT aimless.mtz > /dev/null 2>&1 << eof
 ANOMALOUS ON
 eof
@@ -280,9 +283,12 @@ eof
                 j = j - 1
             if self.clust == "c":
                 os.makedirs(
-                    os.path.join(self.projname, str(i), str(i) + "_prasa"), exist_ok=True
+                    os.path.join(self.projname, str(i), str(i) + "_prasa"),
+                    exist_ok=True,
                 )
-                workpath = os.path.join(self.path, self.projname, str(i), str(i) + "_prasa")
+                workpath = os.path.join(
+                    self.path, self.projname, str(i), str(i) + "_prasa"
+                )
                 shutil.copy2(
                     "truncate.mtz",
                     (os.path.join(self.projname, str(i), str(i) + "_prasa")),
@@ -297,6 +303,7 @@ eof
     def cleanup_prev(self):
         resultspath = os.path.join(self.path, self.projname + "_results")
         self.torun = []
+        self.prasaruns = []
         if os.path.exists(resultspath):
             shutil.rmtree(resultspath)
         if not os.path.exists(self.projname + "_results"):
@@ -312,20 +319,21 @@ eof
             while not (j <= (self.lowsites - 1)):
                 lstfile = os.path.join(
                     self.path,
-                    self.projname
-                    + "/"
-                    + str(i)
-                    + "/"
-                    + str(j)
-                    + "/"
-                    + self.projname
-                    + "_fa.lst",
+                    self.projname,
+                    str(i),
+                    str(j),
+                    str(self.projname) + "_fa.lst",
                 )
                 self.torun.append((lstfile, i, j))
                 j = j - 1
+            prasaout = os.path.join(
+                self.path, self.projname, str(i), str(i) + "_prasa", "prasa.txt"
+            )
+            self.prasaruns.append((prasaout, i))
             i = i + 1
         torun = self.torun
-        return torun
+        prasaruns = self.prasaruns
+        return torun, prasaruns
 
     def results(self, filename, i, j):
         with open(filename, "r") as file:
@@ -380,6 +388,24 @@ eof
                 "w",
             ) as w:
                 w.write(data[:-1])
+
+    def prasa_results(self, filename, i):
+        resfile = os.path.join(
+            self.path, self.projname + "_results", "prasa_" + str(i) + ".csv"
+        )
+        with open(filename, "r") as infile, open(resfile, "w") as outfile:
+            filtered_file = ""
+            for line in infile:
+                if line.startswith("End of trial"):
+                    line.replace("End of trial ", "")
+                    line.replace("finalCC is ", "")
+                    line.replace("CCrange is ", "")
+                    line.replace("CCall is ", "")
+                    line.replace("(candidate for a solution)", "")
+                    outfile.write(line + "\n")
+                else:
+                    pass
+        # might have to use the w.write(data[:-1]) to get rid of last whitespace in file
 
     def run_sagasu_analysis(self):
         ccoutliers_torun = []
@@ -450,7 +476,6 @@ eof
         )
         ccallvsccweak.clear()
         plt.close(ccallvsccweak)
-
 
     def CFOM_PATFOM_analysis(self, filename, resolution, sitessearched):
         df = pd.read_csv(

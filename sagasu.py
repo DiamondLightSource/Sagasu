@@ -45,13 +45,14 @@ if pro_or_ana == "a" or "p":
     run = sagasu_core.core()
     if os.path.exists(os.path.join(path, "inps.pkl")):
         run.readpickle()
-        to_run = run.cleanup_prev()
+        to_run, to_run_prasa = run.cleanup_prev()
         with Halo(
             text="\nPulling out the important stuff",
             text_color="green",
             spinner="dots12",
         ):
             pool.starmap(run.results, to_run)
+            pool.starmap(run.prasa_results, to_run_prasa)
         ccoutliers_torun = run.run_sagasu_analysis()
         with Halo(text="\nLooking for outliers", text_color="green", spinner="toggle"):
             pool.starmap(run.ccalloutliers, ccoutliers_torun)
