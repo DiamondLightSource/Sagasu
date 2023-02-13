@@ -3,20 +3,12 @@ import numpy as np
 import matplotlib.pylab as plt
 import plotly.express as px
 
+
 def ccalloutliers(filename, resolution, sitessearched):
     df = pd.read_csv(
         filename,
         sep=",",
-        names=[
-            "linebeg",
-            "TRY",
-            "CPUNO",
-            "CCALL",
-            "CCWEAK",
-            "CFOM",
-            "BEST",
-            "PATFOM",
-        ],
+        names=["linebeg", "TRY", "CPUNO", "CCALL", "CCWEAK", "CFOM", "BEST", "PATFOM",],
     )
     pd.DataFrame.drop(
         df,
@@ -56,8 +48,16 @@ if __name__ == "__main__":
     # plt.scatter(all_data["CCWEAK"], all_data["CCALL"], c=all_data["WEIGHTED"], cmap="Blues", marker="o")
     all_data.sort_values(by=["COMB_VEC"], axis=0, inplace=True, ascending=False)
     print(all_data)
-    customdata = np.stack((all_data["RES"], all_data["SITES"], all_data["COMB_VEC"]), axis=1)
-    fig = px.scatter(all_data, x="CCWEAK", y="CCALL", color="COMB_VEC", color_continuous_scale='Bluered_r')
+    customdata = np.stack(
+        (all_data["RES"], all_data["SITES"], all_data["COMB_VEC"]), axis=1
+    )
+    fig = px.scatter(
+        all_data,
+        x="CCWEAK",
+        y="CCALL",
+        color="COMB_VEC",
+        color_continuous_scale="Bluered_r",
+    )
     hovertemplate = (
         "Res: %{customdata[0]} Å<br>"
         + "Sites: %{customdata[1]}<br>"

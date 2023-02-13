@@ -29,9 +29,7 @@ if pro_or_ana == "p":
         run.prasa_prep()
         run.shelxd_prep()
         with Halo(
-            text="\nSubmitting jobs",
-            text_color="green",
-            spinner="monkey",
+            text="\nSubmitting jobs", text_color="green", spinner="monkey",
         ):
             run.run_sagasu_proc()
         with Halo(
@@ -49,26 +47,17 @@ if pro_or_ana == "a" or "p":
         run.readpickle()
         to_run = run.cleanup_prev()
         with Halo(
-            text="\nPulling out the important stuff", text_color="green", spinner="dots12"
+            text="\nPulling out the important stuff",
+            text_color="green",
+            spinner="dots12",
         ):
             pool.starmap(run.results, to_run)
-        (
-            clustering_distance_torun,
-            dbscan_torun,
-            hexplots_torun,
-            ccoutliers_torun,
-        ) = run.run_sagasu_analysis()
-        # print("Clustering distance analysis...")
-        # pool.starmap(run.clustering_distance, clustering_distance_torun)
-        # print("DBScan")
-        # pool.starmap(run.analysis, dbscan_torun)
-        # print("Generating hexplots...")
-        # pool.starmap(run.analysis_2, hexplots_torun)
+        ccoutliers_torun = run.run_sagasu_analysis()
         with Halo(text="\nLooking for outliers", text_color="green", spinner="toggle"):
             pool.starmap(run.ccalloutliers, ccoutliers_torun)
             pool.starmap(run.ccweakoutliers, ccoutliers_torun)
             pool.starmap(run.CFOM_PATFOM_analysis, ccoutliers_torun)
-            run.vectoroutliers()           
+            run.vectoroutliers()
             run.tophits()
         with Halo(
             text="\nGenerating pretty pictures", text_color="green", spinner="pong"

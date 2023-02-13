@@ -4,23 +4,18 @@ from datetime import datetime
 import os
 import re
 import pandas as pd
-from matplotlib.patches import Ellipse
-from sklearn.mixture import BayesianGaussianMixture as bgm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import numpy as np
-import math
 import pickle
 import glob
-from sklearn.cluster import DBSCAN
-from mpl_toolkits.mplot3d import Axes3D
+#from mpl_toolkits.mplot3d import Axes3D
 import shutil
 from pathlib import Path
 import subprocess
 import time
-from multiprocessing import Pool
-import drmaa2
+#import drmaa2
 from drmaa2 import JobSession, JobTemplate, JobInfo, Drmaa2Exception
 
 
@@ -35,13 +30,14 @@ class core:
     def get_input(self):
         self.projname = input("Name of project: ")
         self.unitcell = str(input("Unit cell a b c al be ga: "))
-        self.spacegroup = str(input("Spacegroup eg. P212121"))
-        #self.fa_path = input("Path to SHELXC outputs: ")
+        self.spacegroup = str(input("Spacegroup eg. P212121: "))
+        # self.fa_path = input("Path to SHELXC outputs: ")
         self.fa_path = os.getcwd()
         self.highres = int(10 * float(input("High resolution cutoff for grid: ")))
         self.lowres = int(10 * float(input("Low resolution cutoff for grid: ")))
         self.highsites = int(input("Maximum number of sites to search: "))
         self.lowsites = int(input("Minimum number of sites to search: "))
+        self.midsites = int(((self.highsites - self.lowsites) / 2) + self.lowsites)
         self.ntry = int(input("Number of trials: "))
         self.prasa_datain = input("HKL/mtz/sca input file for prasa: ")
         self.atomin = input("Anomalous scatterer: ")
@@ -61,10 +57,9 @@ class core:
             self.lowsites,
             self.ntry,
         )
-# prasa part is not working, something to do with running the bash commands from within python script
-# answer may be to write prasa file and change things like with shelxd ins file
-    def drmaa2template(self, workpath, site):
-        jt = JobTemplate(
+
+    def drmaa2template_shelxd(self, workpath):
+        shelxd_jt = JobTemplate(
             {
                 "job_name": "sagasu",
                 "job_category": "i23_chris",
@@ -76,22 +71,28 @@ class core:
                 "output_path": str(workpath),
                 "error_path": str(workpath),
                 "queue_name": "low.q",
-                "implementation_specific": {
-                    "uge_jt_pe": "smp",
-                },
+                "implementation_specific": {"uge_jt_pe": "smp",},
             }
         )
-        prasa_jt = JobTemplate(
+        return shelxd_jt
+
+    def drmaa2template_afroprasa(self, workpath, rescut):
+        hr = str(self.highres / 10)
+        lr = str(self.lowres / 10)
+        rs = str(int(rescut) / 10)
+        afroprasa_jt = JobTemplate(
             {
-                "job_name": "prasa",
+                "job_name": "afro_prasa",
                 "job_category": "i23_chris",
-                "remote_command": "/dls/science/groups/i23/scripts/chris/Sagasu/runprasa.py",
-                "args": [
-                    str(self.atomin),
-                    str(site),
-                    str(self.ntry),
-                    str(self.lowres),
-                    str(self.highres),
+                "remote_command": "/dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh",
+                "args": [f"{str(self.atomin)}", #$1
+                    f"{str(self.midsites)}", #$2
+                    f"{str(rs)}", #$3
+                    f"{str(self.ntry)}", #$4
+                    f"{lr}", #$5
+                    f"{hr}", #$6
+                    f"{str(self.highsites)}", #$7
+                    f"{str(self.lowsites)}", #$8
                 ],
                 "min_slots": 20,
                 "max_slots": 40,
@@ -99,12 +100,11 @@ class core:
                 "output_path": str(workpath),
                 "error_path": str(workpath),
                 "queue_name": "low.q",
-                "implementation_specific": {
-                    "uge_jt_pe": "smp",
-                },
+                "implementation_specific": {"uge_jt_pe": "smp",},
             }
         )
-        return jt, prasa_jt
+        return afroprasa_jt
+               
 
     def drmaa2_check(self):
         job_list = [job_info[0] for job_info in self.job_details]
@@ -194,8 +194,9 @@ class core:
 
     def shelxd_prep(self):
         os.system("module load ccp4")
-        os.system(f"""
-shelxc {self.projname} <<EOF
+        os.system(
+            f"""
+shelxc {self.projname} > /dev/null 2>&1 <<EOF
 SAD aimless.sca
 SFAC {self.atomin}
 CELL {self.unitcell}
@@ -205,7 +206,8 @@ FIND {str(self.lowsites)}
 MIND -1.5
 FRES 5
 EOF
-                  """)
+                  """
+        )
 
     def prasa_prep(self):
         os.system("module load ccp4")
@@ -220,21 +222,20 @@ EOF
                 self.prasa_datain + " > /dev/null 2>&1"
             )
         else:
-            print("\nNo data given? Guessing...\n")
+            print("\nMust be an mtz file in...\n")
             self.pointless = (
                 f"pointless HKLOUT pointless.mtz HKLIN "
                 + str(self.prasa_datain)
                 + " > /dev/null 2>&1"
             )
         os.system(str(self.pointless))
-        os.system(
-            """
+        os.system("""
 aimless HKLIN pointless.mtz HKLOUT aimless.mtz > /dev/null 2>&1 << eof
 ANOMALOUS ON
 eof
-                  """
+        """
         )
-        os.system("mtz2sca aimless.mtz")
+        os.system("mtz2sca aimless.mtz > /dev/null 2>&1")
         os.system(
             "ctruncate -hklin aimless.mtz -hklout truncate.mtz -colin '/*/*/[I(+),SIGI(+),I(-),SIGI(-)]' > /dev/null 2>&1"
         )
@@ -271,7 +272,7 @@ eof
                     )
                     os.chdir(self.path)
                 elif self.clust == "c":
-                    template, _ = self.drmaa2template(workpath, str(i))
+                    template = self.drmaa2template_shelxd(workpath)
                     job = self.session.run_job(template)
                     self.job_details.append([job])
                 else:
@@ -279,11 +280,14 @@ eof
                 j = j - 1
             if self.clust == "c":
                 os.makedirs(
-                    os.path.join(self.projname, str(i), "_prasa"), exist_ok=True
+                    os.path.join(self.projname, str(i), str(i) + "_prasa"), exist_ok=True
                 )
-                workpath = os.path.join(self.path, self.projname, str(i), "_prasa")
-                shutil.copy2("truncate.mtz", (os.path.join(self.projname, str(i), "_prasa")))
-                _, prasa_template = self.drmaa2template(workpath, str(i))
+                workpath = os.path.join(self.path, self.projname, str(i), str(i) + "_prasa")
+                shutil.copy2(
+                    "truncate.mtz",
+                    (os.path.join(self.projname, str(i), str(i) + "_prasa")),
+                )
+                prasa_template = self.drmaa2template_afroprasa(workpath, str(i))
                 job = self.session.run_job(prasa_template)
                 self.job_details.append([job])
             else:
@@ -378,9 +382,6 @@ eof
                 w.write(data[:-1])
 
     def run_sagasu_analysis(self):
-        clustering_distance_torun = []
-        dbscan_torun = []
-        hexplots_torun = []
         ccoutliers_torun = []
         if not os.path.exists(self.projname + "_figures"):
             os.mkdir(self.projname + "_figures")
@@ -393,17 +394,10 @@ eof
                     self.path,
                     self.projname + "_results/" + str(i) + "_" + str(j) + ".csv",
                 )
-                numbers = str(i) + "_" + str(j)
-                if self.clusteranalysis == "y":
-                    clustering_distance_torun.append((csvfile, numbers))
-                    dbscan_torun.append((csvfile, numbers, i, j))
-                    hexplots_torun.append((csvfile, numbers))
-                else:
-                    print("No cluster analysis requested")
                 ccoutliers_torun.append((csvfile, i, j))
                 j = j - 1
             i = i + 1
-        return clustering_distance_torun, dbscan_torun, hexplots_torun, ccoutliers_torun
+        return ccoutliers_torun
 
     def for_ML_analysis(self):
         to_run_ML = []
@@ -440,7 +434,6 @@ eof
             ],
         )
         plt.scatter(df["CCWEAK"], df["CCALL"], marker="o")
-        # plt.axis("off")
         plt.draw()
         ccallvsccweak = plt.gcf()
         ccallvsccweak.savefig(
@@ -458,166 +451,6 @@ eof
         ccallvsccweak.clear()
         plt.close(ccallvsccweak)
 
-    def draw_ellipse(self, position, covariance, ax=None, **kwargs):
-        """Draw an ellipse with a given position and covariance"""
-        ax = ax or plt.gca()
-        # Convert covariance to principal axes
-        if covariance.shape == (2, 2):
-            U, s, Vt = np.linalg.svd(covariance)
-            angle = np.degrees(np.arctan2(U[1, 0], U[0, 0]))
-            width, height = 2 * np.sqrt(s)
-        else:
-            angle = 0
-            width, height = 2 * np.sqrt(covariance)
-        # Draw the Ellipse
-        for nsig in range(1, 4):
-            ax.add_patch(
-                Ellipse(position, nsig * width, nsig * height, angle, **kwargs)
-            )
-
-    def plot_gmm(self, gmm, X, n_init, nums, label=True, ax=None):
-        ax = ax or plt.gca()
-        labels = gmm.fit(X).predict(X)
-        if label:
-            ax.scatter(X[:, 0], X[:, 1], c=labels, s=40, cmap="viridis", zorder=2)
-        else:
-            ax.scatter(X[:, 0], X[:, 1], s=40, zorder=2)
-        w_factor = 0.2 / gmm.weights_.max()
-        for pos, covar, w in zip(gmm.means_, gmm.covariances_, gmm.weights_):
-            self.draw_ellipse(pos, covar, alpha=w * w_factor)
-        if gmm.converged_ is True:
-            print("Clustering converged after " + str(gmm.n_iter_) + " iterations")
-        if gmm.converged_ is False:
-            print("Clustering did not converge after " + str(n_init) + " iterations")
-        print(
-            str(round((gmm.weights_[0]) * 100, 1))
-            + "% in first cluster, "
-            + str(round((gmm.weights_[1]) * 100, 1))
-            + "% in second cluster"
-        )
-        meanchange = np.vstack((gmm.means_, gmm.mean_prior_))
-        dist_c = math.sqrt(
-            ((abs((gmm.means_[0][0]) - (gmm.means_[1][0]))) ** 2)
-            + ((abs((gmm.means_[0][1]) - (gmm.means_[1][1]))) ** 2)
-        )
-        print("Distance between clusters = " + str(dist_c))
-        separation = open(self.projname + "_results/clusterseparations.csv", "a")
-        separation.write(
-            str(meanchange[0])
-            + ","
-            + str(meanchange[1])
-            + ","
-            + str(meanchange[2])
-            + ","
-            + str(dist_c)
-            + ","
-            + str(round((gmm.weights_[0]) * 100, 1))
-            + ","
-            + str(round((gmm.weights_[1]) * 100, 1))
-            + "\n"
-        )
-        ax = plt.gcf()
-        ax.savefig(
-            self.path + "/" + self.projname + "_figures/" + nums + "_clsdst.png",
-            dpi=300,
-        )
-        ax.clear()
-        plt.close(ax)
-
-    def clustering_distance(self, csvfile, nums):
-        df = pd.read_csv(
-            csvfile,
-            sep=",",
-            names=[
-                "linebeg",
-                "TRY",
-                "CPUNO",
-                "CCALL",
-                "CCWEAK",
-                "CFOM",
-                "BEST",
-                "PATFOM",
-            ],
-        )
-        arr = df[["CCALL", "CCWEAK"]].to_numpy()
-        cmean = arr.mean(axis=0)
-        csd = arr.std(axis=0)
-        outliermask = ((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & (
-            (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
-        )
-        arr_out = arr[outliermask]
-        ni = 1000
-        gmm = bgm(
-            n_components=2,
-            covariance_type="full",
-            max_iter=ni,
-            init_params="kmeans",
-            tol=1e-6,
-        )
-        self.plot_gmm(gmm, arr, ni, nums)
-
-    def analysis(self, filename, nums, a_res, a_sites):
-        df = pd.read_csv(
-            filename,
-            sep=",",
-            names=[
-                "linebeg",
-                "TRY",
-                "CPUNO",
-                "CCALL",
-                "CCWEAK",
-                "CFOM",
-                "BEST",
-                "PATFOM",
-            ],
-        )
-        ccallweak = df[["CCALL", "CCWEAK"]]
-        clustr = DBSCAN(eps=0.7, min_samples=1, n_jobs=-1).fit(ccallweak)
-        labels = len(set(clustr.labels_))
-        print("DBSCAN found " + str(labels) + " cluster(s)")
-        plt.scatter(
-            df["CCALL"],
-            df["CCWEAK"],
-            c=clustr.labels_.astype(float),
-            marker="+",
-            s=50,
-            alpha=0.5,
-        )
-        plt.xlabel("CCALL")
-        plt.ylabel("CCWEAK")
-        plt.title("Resolution: " + str(a_res / 10) + "Å , Sites: " + str(a_sites))
-        plt.draw()
-        ccallvsccweak = plt.gcf()
-        ccallvsccweak.savefig(
-            self.path + "/" + self.projname + "_figures/" + nums + ".png", dpi=300
-        )
-        ccallvsccweak.clear()
-        plt.close(ccallvsccweak)
-
-    def analysis_2(self, filename, nums):
-        df = pd.read_csv(
-            filename,
-            sep=",",
-            names=[
-                "linebeg",
-                "TRY",
-                "CPUNO",
-                "CCALL",
-                "CCWEAK",
-                "CFOM",
-                "BEST",
-                "PATFOM",
-            ],
-        )
-        sns.jointplot(x=df["CCALL"], y=df["CCWEAK"], kind="hex", space=0)
-        plt.draw()
-        snsplot = plt.gcf()
-        snsplot.savefig(
-            self.path + "/" + self.projname + "_figures/" + nums + "_hexplot.png",
-            dpi=300,
-        )
-        snsplot.clear()
-        plt.close(snsplot)
 
     def CFOM_PATFOM_analysis(self, filename, resolution, sitessearched):
         df = pd.read_csv(
@@ -724,10 +557,11 @@ eof
         median = df["CCWEAK"].median()
         arr = df[["CCALL", "CCWEAK"]].to_numpy()
         cmean = arr.mean(axis=0)
-        csd = arr.std(axis=0)
-        outliermask = ((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & (
-            (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
-        )
+        # csd = arr.std(axis=0)
+        # outliermask = ((arr[:, 0]) > (cmean[0] - (2 * csd[0]))) & (
+        #     (arr[:, 1]) > (cmean[1] - (2 * csd[1]))
+        # )
+        outliermask = ((arr[:, 0]) > (cmean[0])) & ((arr[:, 1]) > (cmean[1]))
         arr = arr[outliermask]
         mad = np.median(np.sqrt((arr[:, 1] - median) ** 2))
         ccweakmad = arr[:, 1] - median
@@ -893,7 +727,6 @@ eof
             outfile.write(self.topweak)
             outfile.write("\n")
             outfile.write(self.top_CFOM)
-        # make some 3d figures
         ax = plt.axes(projection="3d")
         ax.plot_trisurf(
             df["res"], df["sites"], df["score"], cmap="viridis", edgecolor="none"
@@ -960,7 +793,7 @@ eof
                     self.sg = words[-1]
         os.system("module load phenix")
         self.emma = os.popen(
-            "phenix.emma "
+            "module load phenix && phenix.emma "
             + str(
                 os.path.join(
                     self.path,
