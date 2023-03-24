@@ -390,13 +390,14 @@ eof
                 w.write(data[:-1])
 
     def prasa_results(self, filename, i):
+        # would be nice to find a way not to have two separate files...
         resfile = os.path.join(
             self.path, self.projname + "_results", "raw_prasa_" + str(i) + ".csv"
         )
         resfile_filt = os.path.join(
             self.path, self.projname + "_results", "prasa_" + str(i) + ".csv"
         )
-        
+
         with open(filename, "r") as infile, open(resfile, "w") as outfile:
             filtered_file = ""
             for line in infile:
@@ -409,16 +410,13 @@ eof
         self.replace(resfile, "finalCC is ", "")
         self.replace(resfile, "CCrange is ", "")
         self.replace(resfile, "CCall is ", "")
-        self.replace(resfile, "(candidate for a solution)", "")        
+        self.replace(resfile, "(candidate for a solution)", "")
         with open(resfile, "r") as file, open(resfile_filt, "w") as out:
             for line in file:
                 lineout = line.replace(" ()", "")
                 lineout = str(i) + ", " + lineout
                 out.write(lineout)
         # might have to use the w.write(data[:-1]) to get rid of last whitespace in file
-        
-
-
 
     def run_sagasu_analysis(self):
         ccoutliers_torun = []
