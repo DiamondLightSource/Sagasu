@@ -391,21 +391,34 @@ eof
 
     def prasa_results(self, filename, i):
         resfile = os.path.join(
+            self.path, self.projname + "_results", "raw_prasa_" + str(i) + ".csv"
+        )
+        resfile_filt = os.path.join(
             self.path, self.projname + "_results", "prasa_" + str(i) + ".csv"
         )
+        
         with open(filename, "r") as infile, open(resfile, "w") as outfile:
             filtered_file = ""
             for line in infile:
                 if line.startswith("End of trial"):
-                    line.replace("End of trial ", "")
-                    line.replace("finalCC is ", "")
-                    line.replace("CCrange is ", "")
-                    line.replace("CCall is ", "")
-                    line.replace("(candidate for a solution)", "")
-                    outfile.write(line + "\n")
+                    if not line.endswith(" 0\n"):
+                        outfile.write(line)
                 else:
                     pass
+        self.replace(resfile, "End of trial ", "")
+        self.replace(resfile, "finalCC is ", "")
+        self.replace(resfile, "CCrange is ", "")
+        self.replace(resfile, "CCall is ", "")
+        self.replace(resfile, "(candidate for a solution)", "")        
+        with open(resfile, "r") as file, open(resfile_filt, "w") as out:
+            for line in file:
+                lineout = line.replace(" ()", "")
+                lineout = str(i) + ", " + lineout
+                out.write(lineout)
         # might have to use the w.write(data[:-1]) to get rid of last whitespace in file
+        
+
+
 
     def run_sagasu_analysis(self):
         ccoutliers_torun = []
