@@ -876,6 +876,8 @@ eof
         <p><span style="font-family:courier new,courier,monospace;">Results for project <strong>{projname}</strong>, <strong>{ntry}</strong> trys with a low resolution limit of <strong>{lowres}</strong> and a high resolution limit of <strong>{highres}</strong>, searching for a number of sites between <strong>{lowsites}</strong> and <strong>{highsites}</strong>.</span></p>
 
         <hr />
+        
+        <p><a href="./{projname}_figures/vectoroutliers.html">Vector Outliers Overview</a></p>
         """.format(
             projname=self.projname,
             ntry=str(self.ntry),
@@ -884,7 +886,7 @@ eof
             lowsites=str(self.lowsites),
             highsites=str(self.highsites),
         )
-
+        
         self.html_topten = """
         <p><span style="font-family:courier new,courier,monospace;"><span style="font-size:18px;"><strong><u>Here are the top 10 hits:</u></strong></span></span></p>
 
