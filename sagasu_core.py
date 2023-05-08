@@ -10,15 +10,11 @@ import plotly.express as px
 import numpy as np
 import pickle
 import glob
-
-# from mpl_toolkits.mplot3d import Axes3D
 import shutil
 from pathlib import Path
 import subprocess
 import time
-
-# import drmaa2
-from drmaa2 import JobSession, JobTemplate, JobInfo, Drmaa2Exception
+import pyslurm
 
 
 sns.set()
@@ -60,60 +56,101 @@ class core:
             self.ntry,
         )
 
-    def drmaa2template_shelxd(self, workpath):
-        shelxd_jt = JobTemplate(
-            {
-                "job_name": "sagasu",
-                "job_category": "i23_chris",
-                "remote_command": "/dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh",
-                "args": [str(self.projname + "_fa")],
-                "min_slots": 20,
-                "max_slots": 40,
-                "working_directory": str(workpath),
-                "output_path": str(workpath),
-                "error_path": str(workpath),
-                "queue_name": "low.q",
-                "implementation_specific": {"uge_jt_pe": "smp",},
-            }
-        )
-        return shelxd_jt
 
-    def drmaa2template_afroprasa(self, workpath, rescut):
+    def slurm_template_afroprasa(self, workpath, rescut):
         hr = str(self.highres / 10)
         lr = str(self.lowres / 10)
         rs = str(int(rescut) / 10)
-        afroprasa_jt = JobTemplate(
-            {
-                "job_name": "afro_prasa",
-                "job_category": "i23_chris",
-                "remote_command": "/dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh",
-                "args": [
-                    f"{str(self.atomin)}",  # $1
-                    f"{str(self.midsites)}",  # $2
-                    f"{str(rs)}",  # $3
-                    f"{str(self.ntry)}",  # $4
-                    f"{lr}",  # $5
-                    f"{hr}",  # $6
-                    f"{str(self.highsites)}",  # $7
-                    f"{str(self.lowsites)}",  # $8
-                ],
-                "min_slots": 20,
-                "max_slots": 40,
-                "working_directory": str(workpath),
-                "output_path": str(workpath),
-                "error_path": str(workpath),
-                "queue_name": "low.q",
-                "implementation_specific": {"uge_jt_pe": "smp",},
-            }
-        )
-        return afroprasa_jt
 
-    def drmaa2_check(self):
+        afroprasa_job = {
+            "job_name": "afro_prasa",
+            "partition": "low",
+            "ntasks": 20,
+            "cpus_per_task": 1,
+            "time": "24:00:00",  
+            "workdir": str(workpath),
+            "output": f"{workpath}/%j.out",
+            "error": f"{workpath}/%j.err",
+            "script": f"""#!/bin/bash
+    /dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh {self.atomin} {self.midsites} {rs} {self.ntry} {lr} {hr} {self.highsites} {self.lowsites}
+    """,
+        }
+        return afroprasa_job
+
+    def slurm_template_shelxd(self, workpath):
+        shelxd_job = {
+            "job_name": "sagasu",
+            "partition": "cs04r",
+            "ntasks": 20,
+            "cpus_per_task": 1,
+            "time": "24:00:00",  
+            "workdir": str(workpath),
+            "output": f"{workpath}/%j.out",
+            "error": f"{workpath}/%j.err",
+            "script": f"""#!/bin/bash
+    /dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {self.projname}_fa
+    """,
+        }
+        return shelxd_job
+
+    def slurm_check(self):
         job_list = [job_info[0] for job_info in self.job_details]
-        time.sleep(10)
-        self.session.wait_all_started(job_list)
-        time.sleep(10)
-        self.session.wait_all_terminated(job_list)
+        for job_id in job_list:
+            while True:
+                job_status = pyslurm.job.find_id(job_id)
+                if job_status["job_state"] in ("COMPLETED", "FAILED", "CANCELLED", "TIMEOUT"):
+                    break
+                time.sleep(10)
+
+    # if slurmpy is uninstallable eg. on Mac, need to use the code below.
+
+    def submit_shelxd_job_slurmpyless(self, workpath):
+        with open(workpath / "shelxd_job.sh", "w") as f:
+            f.write(
+                f"""#!/bin/bash
+    #SBATCH --job-name=sagasu
+    #SBATCH --cpus-per-task=20
+    #SBATCH --mem-per-cpu=1G
+    #SBATCH --partition=low.q
+    #SBATCH --output={workpath}/shelxd_output.log
+    #SBATCH --error={workpath}/shelxd_error.log
+
+    /dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {str(self.projname + "_fa")}
+    """)
+        subprocess.run(["sbatch", str(workpath / "shelxd_job.sh")])
+
+    def submit_afroprasa_job_slurmpyless(self, workpath, rescut):
+        hr = str(self.highres / 10)
+        lr = str(self.lowres / 10)
+        rs = str(int(rescut) / 10)
+        
+        with open(workpath / "afroprasa_job.sh", "w") as f:
+            f.write(
+                f"""#!/bin/bash
+    #SBATCH --job-name=afro_prasa
+    #SBATCH --cpus-per-task=20
+    #SBATCH --mem-per-cpu=1G
+    #SBATCH --partition=low.q
+    #SBATCH --output={workpath}/afroprasa_output.log
+    #SBATCH --error={workpath}/afroprasa_error.log
+
+    /dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh {self.atomin} {self.midsites} {rs} {self.ntry} {lr} {hr} {self.highsites} {self.lowsites}
+    """)
+        subprocess.run(["sbatch", str(workpath / "afroprasa_job.sh")])
+        
+    def wait_for_slurm_jobs_slurmless(self, job_name):
+        while True:
+            output = subprocess.check_output(["squeue", "--name", job_name, "--format", "%t"]).decode("utf-8")
+            job_status = [line.strip() for line in output.splitlines() if line.strip()]
+
+            if len(job_status) > 1:
+                print(f"Waiting for {job_name} jobs to finish...")
+                time.sleep(60)
+            else:
+                print(f"All {job_name} jobs have finished.")
+                break
+        # Use with wait_for_slurm_jobs("sagasu") and wait_for_slurm_jobs("afro_prasa")
+
 
     def writepickle(self):
         with open("inps.pkl", "wb") as f:
