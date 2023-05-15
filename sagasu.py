@@ -7,6 +7,7 @@ import sagasu_core
 import os
 from multiprocessing import Pool
 from halo import Halo
+import time
 
 
 path = os.getcwd()
@@ -52,7 +53,8 @@ if pro_or_ana == "a" or "p":
             spinner="dots12",
         ):
             pool.starmap(run.results, to_run)
-            pool.starmap(run.prasa_results, to_run_prasa)
+            #pool.starmap(run.prasa_results, to_run_prasa)
+        run.prasa_results_concurrent()
         ccoutliers_torun = run.run_sagasu_analysis()
         with Halo(text="\nLooking for outliers", text_color="green", spinner="toggle"):
             pool.starmap(run.ccalloutliers, ccoutliers_torun)

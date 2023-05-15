@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import os
+import csv
 import re
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,6 +11,7 @@ import plotly.express as px
 import numpy as np
 import pickle
 import glob
+from multiprocessing import Pool
 
 # from mpl_toolkits.mplot3d import Axes3D
 import shutil
@@ -417,6 +419,63 @@ eof
                 lineout = str(i) + ", " + lineout
                 out.write(lineout)
         # might have to use the w.write(data[:-1]) to get rid of last whitespace in file
+
+    def parse_prasa_txt(self, number, prasa_file_path):
+        with open(prasa_file_path, 'r') as f:
+            lines = f.readlines()
+
+        candidate_data = []
+        number = float(number / 10)
+        for line in lines:
+            if line.startswith("End of trial") and line.rstrip().endswith("(candidate for a solution)"):
+                stripped_line = ''.join(filter(lambda x: x.isdigit() or x == '.' or x == ' ', line))
+                numbers = stripped_line.split()
+                candidate_data.append([number] + [float(num) for num in numbers])
+
+        return candidate_data
+
+    def process_prasa_file(self, number):
+        prasa_folder = os.path.join(self.projname, str(number), f"{number}_prasa")
+        prasa_file_path = os.path.join(prasa_folder, "prasa.txt")
+
+        if not os.path.exists(prasa_file_path):
+            return None
+
+        candidate_data = parse_prasa_txt(number, prasa_file_path)
+
+        if candidate_data:
+            pdb_file_path = os.path.join(prasa_folder, "prasa.pdb")
+            copy_pdb = os.path.exists(pdb_file_path)
+        else:
+            copy_pdb = False
+
+        return (candidate_data, copy_pdb)
+    
+    def prasa_results_concurrent(self):
+        results_folder = f"{self.projname}_results"
+        pdbs_folder = os.path.join(results_folder, "pdbs")
+        os.makedirs(results_folder, exist_ok=True)
+        os.makedirs(pdbs_folder, exist_ok=True)
+
+        with Pool() as pool:
+            low = self.lowres * 10
+            high = self.highres * 10
+            args = [number for number in range(low, high)]
+            results = pool.starmap(self.process_prasa_file, args)
+
+        with open(os.path.join(results_folder, "prasa.csv"), 'w', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow(['res', 'CC', 'CCRange', 'CCAll'])
+
+            for (number, (candidate_data, copy_pdb)) in zip(range(low, high), results):
+                if candidate_data:
+                    for data in candidate_data:
+                        csv_writer.writerow(data)
+
+                    if copy_pdb:
+                        prasa_folder = os.path.join(self.projname, str(number), f"{number}_prasa")
+                        pdb_file_path = os.path.join(prasa_folder, "prasa.pdb")
+                        shutil.copy2(pdb_file_path, os.path.join(pdbs_folder, f"{number}_prasa.pdb"))
 
     def run_sagasu_analysis(self):
         ccoutliers_torun = []
