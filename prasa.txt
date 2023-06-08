@@ -1,0 +1,170 @@
+<B><FONT COLOR='#FF0000'><!--SUMMARY_BEGIN-->
+<html> <!-- CCP4 HTML LOGFILE -->
+<hr>
+<pre>
+ 
+ ###############################################################
+ ###############################################################
+ ###############################################################
+ ### CCP4 8.0.007: prasa               version 0.65 : 02/08/22##
+ ###############################################################
+ User: unknown  Run date: 13/ 2/2023 Run time: 16:56:35 
+
+
+ Please reference: Collaborative Computational Project, Number 4. 2011.
+ "Overview of the CCP4 suite and current developments". Acta Cryst. D67, 235-242.
+ as well as any specific reference in the program write-up.
+
+<!--SUMMARY_END--></FONT></B>
+
+mtzin 	afro.mtz
+colin-fo 	*/*/[EA,SIGEA]
+chargeflip 	2
+ncycles 	200
+shannon 	1.15
+numthreads 	40
+pdbout 	prasa.pdb
+histmatch 	1
+atom 	S
+rescut 	3.0
+ntrials 	100
+maxstatrescut 	4.0
+minstatrescut 	3.0
+natoms 	9
+minpeaks 	6
+
+Parameters used:
+ atom: S
+ ntrials: 100
+ ncycles: 200
+ natoms: 9
+ beta: 0.82
+ delta: 1.75
+ shannon: 1.15
+ rescut: 3
+ minstatrescut: 3
+ maxstatrescut: 4
+ chargeflip: 2
+ specialpos: 0
+ deltadec: 0.15
+ addhalfstat: 0
+ statcyc: 40
+ statcycskip: 7
+ outpdbthres: 0.95
+ recirestrdiff: 0
+ minpeaks: 6
+
+ numthreads: 40
+
+ histmatch: 1
+
+Generated distribution with quantiles (10/25/50/75/90): 0.0932957 0.246281 0.525294 0.928627 1.30493 1.67927
+Using histogram matching with quantiles (10/25/50/75/90): 0.0932957 0.246281 0.525294 0.928627 1.30493 1.67927
+End of trial 4, final CC is 0
+End of trial 10, final CC is 0
+End of trial 7, final CC is 0
+End of trial 23, final CC is 0
+End of trial 26, final CC is 0
+End of trial 2, final CC is 0
+End of trial 1, final CC is 20.6845 , CCrange is 21.2595 , CCall is 41.944 (candidate for a solution)
+End of trial 5, final CC is 0
+End of trial 24, final CC is 0
+End of trial 9, final CC is 0
+End of trial 37, final CC is 0
+End of trial 31, final CC is 0
+End of trial 6, final CC is 0
+End of trial 3, final CC is 0
+End of trial 28, final CC is 0
+End of trial 11, final CC is 0
+End of trial 12, final CC is 22.9007 , CCrange is 26.8728 , CCall is 49.7735 (candidate for a solution)
+End of trial 8, final CC is 0
+End of trial 29, final CC is 0
+End of trial 38, final CC is 0
+End of trial 30, final CC is 0
+End of trial 17, final CC is 0
+End of trial 35, final CC is 0
+End of trial 32, final CC is 0
+End of trial 19, final CC is 0
+End of trial 40, final CC is 0
+End of trial 36, final CC is 0
+End of trial 33, final CC is 0
+End of trial 25, final CC is 21.5952 , CCrange is 24.8098 , CCall is 46.405
+End of trial 27, final CC is 0
+End of trial 39, final CC is 0
+End of trial 13, final CC is 0
+End of trial 22, final CC is 0
+End of trial 34, final CC is 0
+End of trial 18, final CC is 0
+End of trial 14, final CC is 0
+End of trial 15, final CC is 0
+End of trial 21, final CC is 0
+End of trial 16, final CC is 0
+End of trial 20, final CC is 0
+End of trial 41, final CC is 0
+End of trial 42, final CC is 16.0069 , CCrange is 16.0416 , CCall is 32.0485
+End of trial 52, final CC is 0
+End of trial 49, final CC is 0
+End of trial 44, final CC is 0
+End of trial 51, final CC is 0
+End of trial 45, final CC is 0
+End of trial 50, final CC is 0
+End of trial 48, final CC is 0
+End of trial 43, final CC is 0
+End of trial 54, final CC is 0
+End of trial 46, final CC is 0
+End of trial 47, final CC is 0
+End of trial 53, final CC is 0
+End of trial 56, final CC is 0
+End of trial 62, final CC is 0
+End of trial 60, final CC is 0
+End of trial 65, final CC is 0
+End of trial 63, final CC is 0
+End of trial 61, final CC is 0
+End of trial 58, final CC is 0
+End of trial 64, final CC is 17.5779 , CCrange is 22.4856 , CCall is 40.0635
+End of trial 67, final CC is 0
+End of trial 59, final CC is 0
+End of trial 69, final CC is 21.3742 , CCrange is 24.3762 , CCall is 45.7504
+End of trial 68, final CC is 0
+End of trial 57, final CC is 0
+End of trial 73, final CC is 0
+End of trial 79, final CC is 0
+End of trial 77, final CC is 0
+End of trial 70, final CC is 0
+End of trial 80, final CC is 0
+End of trial 71, final CC is 0
+End of trial 78, final CC is 0
+End of trial 75, final CC is 0
+End of trial 74, final CC is 0
+End of trial 76, final CC is 0
+End of trial 72, final CC is 0
+End of trial 55, final CC is 15.6712 , CCrange is 16.3832 , CCall is 32.0544
+End of trial 66, final CC is 0
+End of trial 81, final CC is 0
+End of trial 82, final CC is 0
+End of trial 84, final CC is 0
+End of trial 85, final CC is 0
+End of trial 83, final CC is 0
+End of trial 86, final CC is 0
+End of trial 87, final CC is 0
+End of trial 90, final CC is 0
+End of trial 91, final CC is 0
+End of trial 92, final CC is 0
+End of trial 88, final CC is 0
+End of trial 93, final CC is 0
+End of trial 94, final CC is 0
+End of trial 96, final CC is 0
+End of trial 95, final CC is 0
+End of trial 98, final CC is 0
+End of trial 97, final CC is 0
+End of trial 99, final CC is 0
+End of trial 100, final CC is 0
+End of trial 89, final CC is 0
+Normal end of PRASA.
+
+<B><FONT COLOR='#FF0000'><!--SUMMARY_BEGIN-->
+prasa: 
+Times: User:      67.2s System:    0.7s Elapsed:     0:02  
+</pre>
+</html>
+<!--SUMMARY_END--></FONT></B>
