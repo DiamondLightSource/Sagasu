@@ -14,7 +14,6 @@ import shutil
 from pathlib import Path
 import subprocess
 import time
-import pyslurm
 
 
 sns.set()
@@ -267,10 +266,6 @@ eof
         self.job_details = []
         Path(self.projname).mkdir(parents=True, exist_ok=True)
         i = self.highres
-        if self.clust == "l":
-            tot = (self.lowres - self.highres) * ((self.highsites + 1) - self.lowsites)
-        else:
-            pass
         while not (i >= self.lowres):
             Path(os.path.join(self.projname, str(i))).mkdir(parents=True, exist_ok=True)
             i2 = i / 10
@@ -292,10 +287,8 @@ eof
                         ["shelxd", self.projname + "_fa"], stdout=subprocess.PIPE
                     )
                     os.chdir(self.path)
-                elif self.clust == "c":
-                    template = self.drmaa2template_shelxd(workpath)
-                    job = self.session.run_job(template)
-                    self.job_details.append([job])
+                elif self.clust == "c":    
+                    self.slurm_template_shelxd(workpath)
                 else:
                     print("error in input...")
                 j = j - 1
@@ -311,9 +304,7 @@ eof
                     "truncate.mtz",
                     (os.path.join(self.projname, str(i), str(i) + "_prasa")),
                 )
-                prasa_template = self.drmaa2template_afroprasa(workpath, str(i))
-                job = self.session.run_job(prasa_template)
-                self.job_details.append([job])
+                self.slurm_template_afroprasa(workpath, str(i))
             else:
                 pass
             i = i + 1
