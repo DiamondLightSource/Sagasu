@@ -57,50 +57,32 @@ class core:
         )
 
 
-    def slurm_template_afroprasa(self, workpath, rescut):
-        hr = str(self.highres / 10)
-        lr = str(self.lowres / 10)
-        rs = str(int(rescut) / 10)
 
-        afroprasa_job = {
-            "job_name": "afro_prasa",
-            "partition": "low",
-            "ntasks": 20,
-            "cpus_per_task": 1,
-            "time": "24:00:00",  
-            "workdir": str(workpath),
-            "output": f"{workpath}/%j.out",
-            "error": f"{workpath}/%j.err",
-            "script": f"""#!/bin/bash
-    /dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh {self.atomin} {self.midsites} {rs} {self.ntry} {lr} {hr} {self.highsites} {self.lowsites}
-    """,
-        }
-        return afroprasa_job
 
-    def slurm_template_shelxd(self, workpath):
-        shelxd_job = {
-            "job_name": "sagasu",
-            "partition": "cs04r",
-            "ntasks": 20,
-            "cpus_per_task": 1,
-            "time": "24:00:00",  
-            "workdir": str(workpath),
-            "output": f"{workpath}/%j.out",
-            "error": f"{workpath}/%j.err",
-            "script": f"""#!/bin/bash
-    /dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {self.projname}_fa
-    """,
-        }
-        return shelxd_job
+    # def slurm_template_shelxd(self, workpath):
+    #     shelxd_job = {
+    #         "job_name": "sagasu",
+    #         "partition": "cs04r",
+    #         "ntasks": 20,
+    #         "cpus_per_task": 1,
+    #         "time": "24:00:00",  
+    #         "workdir": str(workpath),
+    #         "output": f"{workpath}/%j.out",
+    #         "error": f"{workpath}/%j.err",
+    #         "script": f"""#!/bin/bash
+    # /dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {self.projname}_fa
+    # """,
+    #     }
+    #     return shelxd_job
 
-    def slurm_check(self):
-        job_list = [job_info[0] for job_info in self.job_details]
-        for job_id in job_list:
-            while True:
-                job_status = pyslurm.job.find_id(job_id)
-                if job_status["job_state"] in ("COMPLETED", "FAILED", "CANCELLED", "TIMEOUT"):
-                    break
-                time.sleep(10)
+    # def slurm_check(self):
+    #     job_list = [job_info[0] for job_info in self.job_details]
+    #     for job_id in job_list:
+    #         while True:
+    #             job_status = pyslurm.job.find_id(job_id)
+    #             if job_status["job_state"] in ("COMPLETED", "FAILED", "CANCELLED", "TIMEOUT"):
+    #                 break
+    #             time.sleep(10)
 
     # if slurmpy is uninstallable eg. on Mac, need to use the code below.
 
@@ -109,9 +91,9 @@ class core:
             f.write(
                 f"""#!/bin/bash
     #SBATCH --job-name=sagasu
-    #SBATCH --cpus-per-task=20
-    #SBATCH --mem-per-cpu=1G
-    #SBATCH --partition=low.q
+    #SBATCH --cpus-per-task=40
+    #SBATCH --mem-per-cpu=4G
+    #SBATCH --partition=cs04r
     #SBATCH --output={workpath}/shelxd_output.log
     #SBATCH --error={workpath}/shelxd_error.log
 
@@ -128,9 +110,9 @@ class core:
             f.write(
                 f"""#!/bin/bash
     #SBATCH --job-name=afro_prasa
-    #SBATCH --cpus-per-task=20
-    #SBATCH --mem-per-cpu=1G
-    #SBATCH --partition=low.q
+    #SBATCH --cpus-per-task=40
+    #SBATCH --mem-per-cpu=4G
+    #SBATCH --partition=cs04r
     #SBATCH --output={workpath}/afroprasa_output.log
     #SBATCH --error={workpath}/afroprasa_error.log
 
@@ -281,7 +263,6 @@ eof
         )
 
     def run_sagasu_proc(self):
-        self.session = JobSession()
         os.chdir(self.path)
         self.job_details = []
         Path(self.projname).mkdir(parents=True, exist_ok=True)
