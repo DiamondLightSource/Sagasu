@@ -1,4 +1,4 @@
-#!/dls/science/groups/i23/pyenvs/ctrl_conda python3
+#!/dls/science/groups/i23/pyenvs/sagasu_conda python3
 
 from datetime import datetime
 import os
@@ -14,6 +14,9 @@ import shutil
 from pathlib import Path
 import subprocess
 import time
+import requests
+import paramiko
+import json
 
 
 sns.set()
@@ -55,82 +58,85 @@ class core:
             self.ntry,
         )
 
+    def get_slurm_token(self, command):
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect("wilson")
+        command - "scontrol token lifespan=3600"
+        stdin, stdout, stderr = client.exec_command(command)
+        output = stdout.read().decode('utf-8')
+        self.token = None
+        for line in output.split('\n'):
+            if line.startswith('SLURM_JWT'):
+                self.token = line.split('=')[1].strip()
+            else:
+                pass
+        client.close()
+
+    def submit_shelxd_job_slurm(self):
+        url = "http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/submit"
+        headers = {'Authoristion': f'Bearer {self.token}', 'Content-Type': 'application/json'}
 
 
+        script = "#!/bin/bash\n"
+        script += "#SBATCH --job-name=sagasu\n"
+        script += "#SBATCH --cpus-per-task=20\n"
+        script += "#SBATCH --mem-per-cpu=1G\n"
+        script += "#SBATCH --partition=cs04r\n"
+        script += "#SBATCH --array=0-" + (str(len(self.shelxd_folder_paths) - 1)) + "\n"
+        for i, folder in enumerate(self.shelx_folder_paths):  
+            script += f"#SBATCH --output={folder}/shelxd_output.log\n"
+            script += f"#SBATCH --error={folder}/shelxd_error.log\n"
+            script += f"/dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {str(self.projname + '_fa')}\n}"
 
-    # def slurm_template_shelxd(self, workpath):
-    #     shelxd_job = {
-    #         "job_name": "sagasu",
-    #         "partition": "cs04r",
-    #         "ntasks": 20,
-    #         "cpus_per_task": 1,
-    #         "time": "24:00:00",  
-    #         "workdir": str(workpath),
-    #         "output": f"{workpath}/%j.out",
-    #         "error": f"{workpath}/%j.err",
-    #         "script": f"""#!/bin/bash
-    # /dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {self.projname}_fa
-    # """,
-    #     }
-    #     return shelxd_job
+        payload = {
+            'script': script,
+            'script_type': 'batch_script'
+        }
 
-    # def slurm_check(self):
-    #     job_list = [job_info[0] for job_info in self.job_details]
-    #     for job_id in job_list:
-    #         while True:
-    #             job_status = pyslurm.job.find_id(job_id)
-    #             if job_status["job_state"] in ("COMPLETED", "FAILED", "CANCELLED", "TIMEOUT"):
-    #                 break
-    #             time.sleep(10)
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
 
-    # if slurmpy is uninstallable eg. on Mac, need to use the code below.
+        if response.status_code != 201:
+            print("SHELXD: Failed to submit array job")
+        else:
+            print("SHELXD: Array job submitted")
 
-    def submit_shelxd_job_slurmpyless(self, workpath):
-        with open(workpath / "shelxd_job.sh", "w") as f:
-            f.write(
-                f"""#!/bin/bash
-    #SBATCH --job-name=sagasu
-    #SBATCH --cpus-per-task=40
-    #SBATCH --mem-per-cpu=4G
-    #SBATCH --partition=cs04r
-    #SBATCH --output={workpath}/shelxd_output.log
-    #SBATCH --error={workpath}/shelxd_error.log
-
-    /dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {str(self.projname + "_fa")}
-    """)
-        subprocess.run(["sbatch", str(workpath / "shelxd_job.sh")])
-
-    def submit_afroprasa_job_slurmpyless(self, workpath, rescut):
+    def submit_afroprasa_job_slurm(self):
+        url = "http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/submit"
+        headers = {'Authoristion': f'Bearer {self.token}', 'Content-Type': 'application/json'}
         hr = str(self.highres / 10)
         lr = str(self.lowres / 10)
-        rs = str(int(rescut) / 10)
-        
-        with open(workpath / "afroprasa_job.sh", "w") as f:
-            f.write(
-                f"""#!/bin/bash
-    #SBATCH --job-name=afro_prasa
-    #SBATCH --cpus-per-task=40
-    #SBATCH --mem-per-cpu=4G
-    #SBATCH --partition=cs04r
-    #SBATCH --output={workpath}/afroprasa_output.log
-    #SBATCH --error={workpath}/afroprasa_error.log
 
-    /dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh {self.atomin} {self.midsites} {rs} {self.ntry} {lr} {hr} {self.highsites} {self.lowsites}
-    """)
-        subprocess.run(["sbatch", str(workpath / "afroprasa_job.sh")])
-        
-    def wait_for_slurm_jobs_slurmless(self, job_name):
+        script = "#!/bin/bash\n"
+        script += "#SBATCH --job-name=sagasu\n"
+        script += "#SBATCH --cpus-per-task=20\n"
+        script += "#SBATCH --mem-per-cpu=1G\n"
+        script += "#SBATCH --partition=cs04r\n"
+        script += "#SBATCH --array=0-" + (str(len(self.prasa_folder_paths) - 1)) + "\n"
+        for i, (folder, rescut) in enumerate(self.prasa_folder_paths):  
+            script += f"#SBATCH --output={folder}/afroprasa_output.log\n"
+            script += f"#SBATCH --error={folder}/afroprasa_error.log\n"
+            script += f"/dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh {self.atomin} {self.midsites} {str(rescut / 10)} {self.ntry} {lr} {hr} {self.highsites} {self.lowsites}\n"
+
+        payload = {
+            'script': script,
+            'script_type': 'batch_script'
+        }
+
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+        if response.status_code != 201:
+            print("Afroprasa: Failed to submit array job")
+            self.job_id_afroprasa = response.json().get('job_id')
+        else:
+            print("Afroprasa: Array job submitted")       
+       
+    def wait_for_slurm_jobs(self):
+        url = f"http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/jobs/{self.job_id_afroprasa}"
+        headers = {'Authoristion': f'Bearer {self.token}'}
+
         while True:
-            output = subprocess.check_output(["squeue", "--name", job_name, "--format", "%t"]).decode("utf-8")
-            job_status = [line.strip() for line in output.splitlines() if line.strip()]
-
-            if len(job_status) > 1:
-                print(f"Waiting for {job_name} jobs to finish...")
-                time.sleep(60)
-            else:
-                print(f"All {job_name} jobs have finished.")
-                break
-        # Use with wait_for_slurm_jobs("sagasu") and wait_for_slurm_jobs("afro_prasa")
+            
 
 
     def writepickle(self):
@@ -264,6 +270,8 @@ eof
     def run_sagasu_proc(self):
         os.chdir(self.path)
         self.job_details = []
+        self.shelxd_folder_paths = []
+        self.prasa_folder_paths = []
         Path(self.projname).mkdir(parents=True, exist_ok=True)
         i = self.highres
         while not (i >= self.lowres):
@@ -288,7 +296,7 @@ eof
                     )
                     os.chdir(self.path)
                 elif self.clust == "c":    
-                    self.slurm_template_shelxd(workpath)
+                    self.shelxd_folder_paths.append(str(workpath))
                 else:
                     print("error in input...")
                 j = j - 1
@@ -305,6 +313,7 @@ eof
                     (os.path.join(self.projname, str(i), str(i) + "_prasa")),
                 )
                 self.slurm_template_afroprasa(workpath, str(i))
+                self.prasa_folder_paths.append(str(workpath), )
             else:
                 pass
             i = i + 1

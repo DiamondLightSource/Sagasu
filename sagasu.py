@@ -29,9 +29,16 @@ if pro_or_ana == "p":
         run.prasa_prep()
         run.shelxd_prep()
         with Halo(
-            text="\nSubmitting jobs", text_color="green", spinner="monkey",
+            text="\nPrepping jobs", text_color="green", spinner="pipe",
         ):
             run.run_sagasu_proc()
+        with Halo(
+            text="\nSubmitting jobs",
+            text_color="green",
+            spinner="monkey",
+        ):
+            run.submit_shelxd_job_slurm()
+            run.submit_afroprasa_job_slurm()
         with Halo(
             text="\nJobs are running, please be patient and watch the shark",
             text_color="green",
