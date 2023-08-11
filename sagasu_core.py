@@ -59,11 +59,11 @@ class core:
             self.ntry,
         )
 
-    def get_slurm_token(self, command):
+    def get_slurm_token(self):
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect("wilson")
-        command - "scontrol token lifespan=3600"
+        command = "scontrol token lifespan=3600"
         stdin, stdout, stderr = client.exec_command(command)
         output = stdout.read().decode('utf-8')
         self.token = None
@@ -85,7 +85,7 @@ class core:
         script += "#SBATCH --mem-per-cpu=1G\n"
         script += "#SBATCH --partition=cs04r\n"
         script += "#SBATCH --array=0-" + (str(len(self.shelxd_folder_paths) - 1)) + "\n"
-        for i, folder in enumerate(self.shelx_folder_paths):  
+        for i, folder in enumerate(self.shelxd_folder_paths):  
             script += f"#SBATCH --output={folder}/shelxd_output.log\n"
             script += f"#SBATCH --error={folder}/shelxd_error.log\n"
             script += f"/dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {str(self.projname + '_fa')}\n"
@@ -119,7 +119,7 @@ class core:
         for i, (folder, rescut) in enumerate(self.prasa_folder_paths):  
             script += f"#SBATCH --output={folder}/afroprasa_output.log\n"
             script += f"#SBATCH --error={folder}/afroprasa_error.log\n"
-            script += f"/dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh {self.atomin} {self.midsites} {str(rescut / 10)} {self.ntry} {lr} {hr} {self.highsites} {self.lowsites}\n"
+            script += f"/dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh {self.atomin} {self.midsites} {str(rescut)} {self.ntry} {lr} {hr} {self.highsites} {self.lowsites}\n"
 
         payload = {
             'script': script,
@@ -342,8 +342,7 @@ eof
                     "truncate.mtz",
                     (os.path.join(self.projname, str(i), str(i) + "_prasa")),
                 )
-                self.slurm_template_afroprasa(workpath, str(i))
-                self.prasa_folder_paths.append(str(workpath), )
+                self.prasa_folder_paths.append((str(workpath), str(i/10)))
             else:
                 pass
             i = i + 1

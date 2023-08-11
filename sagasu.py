@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import sagasu_core
 import os
 from multiprocessing import Pool
@@ -34,6 +37,7 @@ if pro_or_ana == "p":
             text_color="green",
             spinner="monkey",
         ):
+            run.get_slurm_token()
             run.submit_shelxd_job_slurm()
             run.submit_afroprasa_job_slurm()
         with Halo(
