@@ -26,6 +26,7 @@ class core:
     def __init__(self):
         self.timestamp = datetime.now()
         self.path = os.getcwd()
+        self.user = os.getenv('USER')
 
     def get_input(self):
         self.projname = input("Name of project: ")
@@ -75,7 +76,7 @@ class core:
 
     def submit_shelxd_job_slurm(self):
         url = "http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/submit"
-        headers = {'Authoristion': f'Bearer {self.token}', 'Content-Type': 'application/json'}
+        headers = {'X-SLURM-USER-NAME': f'{self.user}', 'X-SLURM-USER-TOKEN': f'{self.token}', 'Content-Type': 'application/json'}
 
 
         script = "#!/bin/bash\n"
@@ -100,10 +101,12 @@ class core:
             print("SHELXD: Failed to submit array job")
         else:
             print("SHELXD: Array job submitted")
+            self.job_id_shelxd = response.json().get('job_id')
+
 
     def submit_afroprasa_job_slurm(self):
         url = "http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/submit"
-        headers = {'Authoristion': f'Bearer {self.token}', 'Content-Type': 'application/json'}
+        headers = {'X-SLURM-USER-NAME': f'{self.user}', 'X-SLURM-USER-TOKEN': f'{self.token}', 'Content-Type': 'application/json'}
         hr = str(self.highres / 10)
         lr = str(self.lowres / 10)
 
@@ -127,17 +130,23 @@ class core:
 
         if response.status_code != 201:
             print("Afroprasa: Failed to submit array job")
-            self.job_id_afroprasa = response.json().get('job_id')
         else:
-            print("Afroprasa: Array job submitted")       
+            print("Afroprasa: Array job submitted")     
+            self.job_id_afroprasa = response.json().get('job_id')
+  
        
     def wait_for_slurm_jobs(self):
         url = f"http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/jobs/{self.job_id_afroprasa}"
-        headers = {'Authoristion': f'Bearer {self.token}'}
+        headers = {'X-SLURM-USER-NAME': f'{self.user}', 'X-SLURM-USER-TOKEN': f'{self.token}'}
 
         while True:
-            
+            response = requests.get(url, headers=headers)
 
+            if response.status_code != 200:
+                return False
+            else:
+                pass
+            job_status = 
 
     def writepickle(self):
         with open("inps.pkl", "wb") as f:

@@ -44,8 +44,7 @@ if pro_or_ana == "p":
             text_color="green",
             spinner="shark",
         ):
-            run.wait_for_slurm_jobs_slurmless("sagasu")
-            run.wait_for_slurm_jobs_slurmless("afro_prasa")
+            run.wait_for_slurm_jobs()
     else:
         pass
 
