@@ -88,7 +88,7 @@ class core:
         for i, folder in enumerate(self.shelx_folder_paths):  
             script += f"#SBATCH --output={folder}/shelxd_output.log\n"
             script += f"#SBATCH --error={folder}/shelxd_error.log\n"
-            script += f"/dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {str(self.projname + '_fa')}\n}"
+            script += f"/dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {str(self.projname + '_fa')}\n"
 
         payload = {
             'script': script,
@@ -136,17 +136,38 @@ class core:
   
        
     def wait_for_slurm_jobs(self):
-        url = f"http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/jobs/{self.job_id_afroprasa}"
+        afroprasa_url = f"http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/jobs/{self.job_id_afroprasa}"
+        shelxd_url = f"http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/jobs/{self.job_id_shelxd}" 
         headers = {'X-SLURM-USER-NAME': f'{self.user}', 'X-SLURM-USER-TOKEN': f'{self.token}'}
+        afroprasa_finished = False
+        shelxd_finished = False
+        
+        while not (afroprasa_finished and shelxd_finished):
 
-        while True:
-            response = requests.get(url, headers=headers)
+            afroprasa_response = requests.get(afroprasa_url, headers=headers)
+            shelxd_response = requests.get(shelxd_url, headers=headers)
 
-            if response.status_code != 200:
+            if afroprasa_response.status_code != 200 or shelxd_response.status_code != 200:
+                print(f"Something went wrong. afroprasa status {afroprasa_response.text}, shelxd status {shelxd_response.text}")
                 return False
-            else:
-                pass
-            job_status = 
+
+            afroprasa_job_status = afroprasa_response.json().get('job_state')
+            shelxd_job_status = shelxd_response.json().get('job_state')
+
+            if not afroprasa_finished and afroprasa_job_status == 'COMPLETED':
+                afroprasa_finished = True
+
+            if not shelxd_finished and shelxd_job_status == 'COMPLETED':
+                shelxd_finished = True
+
+            if not (afroprasa_finished and shelxd_finished):
+                time.sleep(5)
+
+            if afroprasa_job_status in ['FAILED', 'CANCELLED'] or shelxd_job_status in ['FAILED', 'CANCELLED']:
+                return False
+
+        return True
+
 
     def writepickle(self):
         with open("inps.pkl", "wb") as f:

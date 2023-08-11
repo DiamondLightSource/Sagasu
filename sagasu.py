@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-@author: Chris
-"""
 import sagasu_core
 import os
 from multiprocessing import Pool
@@ -29,7 +24,9 @@ if pro_or_ana == "p":
         run.prasa_prep()
         run.shelxd_prep()
         with Halo(
-            text="\nPrepping jobs", text_color="green", spinner="pipe",
+            text="\nPrepping jobs",
+            text_color="green",
+            spinner="pipe",
         ):
             run.run_sagasu_proc()
         with Halo(
@@ -44,7 +41,9 @@ if pro_or_ana == "p":
             text_color="green",
             spinner="shark",
         ):
-            run.wait_for_slurm_jobs()
+            waiting = run.wait_for_slurm_jobs()
+            if not waiting:
+                exit()
     else:
         pass
 
