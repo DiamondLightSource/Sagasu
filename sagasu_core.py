@@ -17,6 +17,8 @@ import time
 import requests
 import paramiko
 import json
+from iotbx import mtz
+
 
 
 sns.set()
@@ -264,7 +266,7 @@ FRES 5
 EOF
                   """
         )
-
+# this preps for prasa and shelxd
     def prasa_prep(self):
         os.system("module load ccp4")
         if self.prasa_datain.endswith(".hkl" or ".HKL"):
@@ -296,6 +298,21 @@ eof
         os.system(
             "ctruncate -hklin aimless.mtz -hklout truncate.mtz -colin '/*/*/[I(+),SIGI(+),I(-),SIGI(-)]' > /dev/null 2>&1"
         )
+        
+
+    def get_unit_cell_and_sg(self):
+        mtz = mtz.object("aimless.mtz")
+        if mtz.crystals():
+                crystal = mtz.crystals()[0]
+                self.unitcell = crystal.unit_cell().parameters()
+                self.spacegroup = crystal.space_group_info()
+        else:
+            pass
+        if self.unitcell and self.spacegroup:
+            pass
+        else:
+            self.spacegroup = input("Could not determine spacegroup, enter now (eg. P321): ")
+            self.unitcell = input("Could not determine unit cell, enter now (eg. 150 150 45 90 90 120): ")
 
     def run_sagasu_proc(self):
         os.chdir(self.path)

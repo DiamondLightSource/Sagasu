@@ -3,55 +3,73 @@ import re
 import os
 from multiprocessing import Pool
 from itertools import combinations
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
-# emma works with paths
-# can use the scaled.mtz or similar input file to extract symmetry information eg.
-# phenix.emma --symmetry=scaled.mtz --diffraction_index_equivalent 19_25.pdb 19_26.pdb
 
-pairs_pattern = r"Pairs:\s*(\d+)"
-singles_model1_pattern = r"Singles model 1:\s*(\d+)"
-singles_model2_pattern = r"Singles model 2:\s*(\d+)"
-projname = "testing"
-highres = 19
-lowres = 27
-highsites = 30
-lowsites = 20
-
-os.system("module load phenix")
-
-input_files = [os.path.join(os.getcwd(), f"{projname}/{str(i)}/{str(j)}/{projname}_fa.pdb") for i in range(highres, lowres) for j in range(lowsites, highsites)]
-results = []
 
 def run_command(file1, file2):
-    command = ["phenix.emma", "--symmetry=scaled.mtz", file1, file2]
-    result = subprocess.run(command, stdout=subprocess.PIPE)
+    command = f"module load phenix && phenix.emma --symmetry=scaled.mtz {str(file1)} {str(file2)}"  # Separate command and arguments
+    result = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
     return (file1, file2, result.stdout.decode('utf-8'))
 
-def collect_result(result):
-    global results
-    results.append(result)
+if __name__ == "__main__":
 
-parallel_filelist = list(combinations(input_files, 2))
+    pool = Pool(os.cpu_count() - 1)
 
-with Pool() as pool:
-    for file1, file2 in parallel_filelist:
-        pool.apply_async(run_command, args=(file1, file2), callback=collect_result)
-    pool.close()
-    pool.join()
+    pairs_pattern = r"Pairs:\s*(\d+)"
+    singles_model1_pattern = r"Singles model 1:\s*(\d+)"
+    singles_model2_pattern = r"Singles model 2:\s*(\d+)"
+    projname = "testing"
+    highres = 22
+    lowres = 26
+    highsites = 29
+    lowsites = 23
 
-for file1, file2, output in results:
-    pairs_match = re.search(pairs_pattern, output)
-    singles_model1_match = re.search(singles_model1_pattern, output)
-    singles_model2_match = re.search(singles_model2_pattern, output)
+    input_files = [os.path.join(os.getcwd(), f"{projname}/{str(i)}/{str(j)}/{projname}_fa.pdb") for i in range(highres, lowres) for j in range(lowsites, highsites)]
+    results = []
+    parallel_filelist = list(combinations(input_files, 2))
 
-    if pairs_match:
-        pairs_number = pairs_match.group(1)
-        print("Pairs:", pairs_number)
+    results = pool.starmap(run_command, parallel_filelist)
 
-    if singles_model1_match:
-        singles_model1_number = singles_model1_match.group(1)
-        print("Singles model 1:", singles_model1_number)
+    percentages = []
 
-    if singles_model2_match:
-        singles_model2_number = singles_model2_match.group(1)
-        print("Singles model 2:", singles_model2_number)
+    for file1, file2, output in results:
+        pairs_match = re.search(pairs_pattern, output)
+        singles_model1_match = re.search(singles_model1_pattern, output)
+        singles_model2_match = re.search(singles_model2_pattern, output)
+
+        if pairs_match and singles_model1_match and singles_model2_match:
+            pairs_number = pairs_match.group(1)
+            singles_model1_number = singles_model1_match.group(1)
+            singles_model2_number = singles_model2_match.group(1)
+        else:
+            print("Cannot match text")
+        
+        if pairs_number and singles_model1_number and singles_model2_number:
+            percentage = np.around((float(pairs_number) / (float(pairs_number) + float(singles_model1_number) + float(singles_model2_number))), 2)
+            filename1 = str(os.path.basename(os.path.dirname(os.path.dirname(file1)))) + "_" + str(os.path.basename(os.path.dirname(file1)))
+            filename2 = str(os.path.basename(os.path.dirname(os.path.dirname(file2)))) + "_" + str(os.path.basename(os.path.dirname(file2)))
+            percentages.append([str(filename1), str(filename2), str(percentage)])
+        else:
+            print("Cannot get numbers out")
+
+    df = pd.DataFrame(percentages, columns=["filename_1", "filename_2", "percentage"])
+    print(df)
+    matrix_df = df.pivot(index="filename_1", columns="filename_2", values="percentage")
+    matrix_df.fillna(0, inplace=True)
+    print(matrix_df)
+    matrix_df.to_csv("matrixdf.csv")
+
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(matrix_df, annot=True, fmt=".2f", cmap="YlGnBu")
+    plt.title("Percentage Correlation Matrix")
+    plt.xlabel("Filename 2")
+    plt.ylabel("Filename 1")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.savefig("heat.png")
+    
+    numeric_data = matrix_df.iloc[:, 1:].values
