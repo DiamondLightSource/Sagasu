@@ -7,6 +7,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import plotly.express as px
+import plotly.figure_factory as ff
 
 
 
@@ -62,9 +64,12 @@ if __name__ == "__main__":
     matrix_df.fillna(0, inplace=True)
     print(matrix_df)
     matrix_df.to_csv("matrixdf.csv")
+    matrix_df.drop('filename_1', axis=1)
+    matrix_df.iloc[:, 1:] = matrix_df.iloc[:, 1:] * 100
+    matrix_df = matrix_df.corr()
 
     plt.figure(figsize=(10, 8))
-    sns.heatmap(matrix_df, annot=True, fmt=".2f", cmap="YlGnBu")
+    sns.heatmap(matrix_df, annot=True, cmap="YlGnBu")
     plt.title("Percentage Correlation Matrix")
     plt.xlabel("Filename 2")
     plt.ylabel("Filename 1")
