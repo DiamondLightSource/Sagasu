@@ -20,3 +20,5 @@ cas3/.DS_Store
 h10_g11/.DS_Store
 ompk/k0_km70_km70pm120_acsh_results/output.html
 __pycache__/prasaresults.cpython-38.pyc
+testing/*
+scaled.mtz
