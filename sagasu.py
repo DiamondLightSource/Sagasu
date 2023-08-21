@@ -69,6 +69,9 @@ if pro_or_ana == "a" or "p":
             pool.starmap(run.ccalloutliers, ccoutliers_torun)
             pool.starmap(run.ccweakoutliers, ccoutliers_torun)
             pool.starmap(run.CFOM_PATFOM_analysis, ccoutliers_torun)
+            to_run_emma = run.get_filenames_for_emma()
+            emma_results = pool.starmap(run.run_emma, to_run_emma)
+            run.emma_correlation_plot(emma_results)
             run.vectoroutliers()
             run.tophits()
         with Halo(
