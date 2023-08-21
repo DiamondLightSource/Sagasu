@@ -18,6 +18,8 @@ import requests
 import paramiko
 import json
 from iotbx import mtz
+from itertools import combinations
+
 
 
 
@@ -924,6 +926,65 @@ eof
             + str(secondsites)
         )
 
+    def run_emma(self, emma_1, emma_2):
+        command = f"module load phenix && phenix.emma --symmetry=scaled.mtz {str(file1)} {str(file2)}"  # Separate command and arguments
+        result = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
+        return (emma_1, emma_2, result.stdout.decode('utf-8'))
+
+    def get_filenames_for_emma(self):
+
+        self.pdb_files_for_emma = [os.path.join(os.getcwd(), f"{self.projname}/{str(i)}/{str(j)}/{self.projname}_fa.pdb") for i in range(self.highres, self.lowres) for j in range(self.lowsites, self.highsites)] 
+        parallel_filelist = list(combinations(pdb_files_for_emma, 2))
+        return parallel_filelist
+
+    def emma_correlation_plot(self, emma_results):
+        pairs_pattern = r"Pairs:\s*(\d+)"
+        singles_model1_pattern = r"Singles model 1:\s*(\d+)"
+        singles_model2_pattern = r"Singles model 2:\s*(\d+)"        
+        
+        percentages = []
+    
+        for file in self.pdb_files_for_emma:
+            filename = str(os.path.basename(os.path.dirname(os.path.dirname(file)))) + "_" + str(os.path.basename(os.path.dirname(file)))
+            diagonalval = ([str(filename), str(filename), str(1)])
+            percentages.append(diagonalval)
+
+        for file1, file2, output in emma_results:
+            pairs_match = re.search(pairs_pattern, output)
+            singles_model1_match = re.search(singles_model1_pattern, output)
+            singles_model2_match = re.search(singles_model2_pattern, output)
+
+            if pairs_match and singles_model1_match and singles_model2_match:
+                pairs_number = pairs_match.group(1)
+                singles_model1_number = singles_model1_match.group(1)
+                singles_model2_number = singles_model2_match.group(1)
+            else:
+                pass
+            
+            if pairs_number and singles_model1_number and singles_model2_number:
+                percentage = np.around((float(pairs_number) / (float(pairs_number) + float(singles_model1_number) + float(singles_model2_number))), 2)
+                filename1 = str(os.path.basename(os.path.dirname(os.path.dirname(file1)))) + "_" + str(os.path.basename(os.path.dirname(file1)))
+                filename2 = str(os.path.basename(os.path.dirname(os.path.dirname(file2)))) + "_" + str(os.path.basename(os.path.dirname(file2)))
+                percentages.append([str(filename1), str(filename2), str(percentage)])
+            else:
+                pass
+        
+        df = pd.DataFrame(percentages, columns=["filename_1", "filename_2", "percentage"])
+        df_pivot1 = df.pivot(index='filename_2', columns='filename_1', values='percentage')
+        df_pivot1.fillna(0, inplace=True)
+
+        df_pivot2 = df.pivot(index='filename_1', columns='filename_2', values='percentage')
+        df_pivot2.fillna(0, inplace=True)
+
+        df_pivot3 = df_pivot1 + df_pivot2
+        df_pivot3 = df_pivot3.multiply(100)
+        df_pivot3.replace(200, 100, inplace=True)
+        
+        fig = px.imshow(df_pivot3, x=df_pivot3.columns, y=df_pivot3.index, text_auto=True, aspect="auto", color_continuous_scale="bluered")
+        fig.update_layout(width=1000,height=1000)
+        fig.write_html(self.projname + "_figures/emmamatrix.html")    
+        
+        
     def writehtml(self):
         self.html_init = """
         <!doctype html>
@@ -942,6 +1003,9 @@ eof
         <hr />
         
         <p><a href="./{projname}_figures/vectoroutliers.html">Vector Outliers Overview</a></p>
+        
+        <p><a href="./{projname}_figures/emmamatrix.html">Phenix EMMA Correlation Heatmap</a></p>
+        
         """.format(
             projname=self.projname,
             ntry=str(self.ntry),
