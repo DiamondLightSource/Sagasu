@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import plotly.express as px
-import plotly.figure_factory as ff
 
 
 
@@ -37,6 +36,11 @@ if __name__ == "__main__":
     results = pool.starmap(run_command, parallel_filelist)
 
     percentages = []
+    
+    for file in input_files:
+        filename = str(os.path.basename(os.path.dirname(os.path.dirname(file)))) + "_" + str(os.path.basename(os.path.dirname(file)))
+        diagonalval = ([str(filename), str(filename), str(1)])
+        percentages.append(diagonalval)
 
     for file1, file2, output in results:
         pairs_match = re.search(pairs_pattern, output)
@@ -60,6 +64,7 @@ if __name__ == "__main__":
 
     df = pd.DataFrame(percentages, columns=["filename_1", "filename_2", "percentage"])
     print(df)
+    df.to_csv("df.csv")
     matrix_df = df.pivot(index="filename_1", columns="filename_2", values="percentage")
     matrix_df.fillna(0, inplace=True)
     print(matrix_df)
