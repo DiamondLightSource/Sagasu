@@ -26,3 +26,4 @@ scaled.mtz
 matrixdf.csv
 correlationplot.py
 phenixemma_confusionmatrix.py
+__pycache__/sagasu_core.cpython-39.pyc
