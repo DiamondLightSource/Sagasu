@@ -17,7 +17,7 @@ import time
 import requests
 import paramiko
 import json
-from iotbx import mtz
+from iotbx.file_reader import any_file
 from itertools import combinations
 
 
@@ -188,26 +188,18 @@ class core:
                     self.clust,
                     self.insin,
                     self.hklin,
+                    self.atomin,
+                    self.prasa_datain,
+                    self.midsites,
+                    self.unitcell,
+                    self.spacegroup,
                 ],
                 f,
             )
 
     def readpickle(self):
         with open("inps.pkl", "rb") as f:
-            (
-                [
-                    projname,
-                    lowres,
-                    highres,
-                    lowsites,
-                    highsites,
-                    ntry,
-                    clusteranalysis,
-                    clust,
-                    insin,
-                    hklin,
-                ]
-            ) = pickle.load(f)
+            pickle.load(f)
             (
                 self.projname,
                 self.lowres,
@@ -219,30 +211,13 @@ class core:
                 self.clust,
                 self.insin,
                 self.hklin,
-            ) = (
-                projname,
-                lowres,
-                highres,
-                lowsites,
-                highsites,
-                ntry,
-                clusteranalysis,
-                clust,
-                insin,
-                hklin,
+                self.atomin,
+                self.prasa_datain,
+                self.midsites,
+                self.unitcell,
+                self.spacegroup,
             )
-        return (
-            self.projname,
-            self.lowres,
-            self.highres,
-            self.lowsites,
-            self.highsites,
-            self.ntry,
-            self.clusteranalysis,
-            self.clust,
-            self.insin,
-            self.hklin,
-        )
+
 
     def replace(self, file, pattern, subst):
         file_handle = open(file, "r")
@@ -304,16 +279,18 @@ eof
         
 
     def get_unit_cell_and_sg(self):
-        self.mtzfile = mtz.object(self.prasa_datain)
-        if mtz.crystals():
-                self.crystal = mtz.crystals()[0]
-                self.unitcell = self.crystal.unit_cell().parameters()
-                self.spacegroup = self.crystal.space_group_info()
-                print(f"Spacegroup and unit cell identified as {str(self.spacegroup)}, {str(self.unitcell)}")
-        else:
+        try:
+            read_data_file = any_file(self.prasa_datain)
+            data_file_symm = read_data_file.crystal_symmetry()
+            symm_as_py_code = data_file_symm.as_py_code()
+            unit_cell_match = re.search(r'unit_cell=\((.*?)\)', symm_as_py_code)
+            self.unitcell = unit_cell_match.group(1)
+            space_group_match = re.search(r'space_group_symbol="([^"]+)"', symm_as_py_code)
+            self.spacegroup = space_group_match.group(1)
+        except:
             pass
         if self.unitcell and self.spacegroup:
-            pass
+            print(f"Spacegroup and unit cell identified as {str(self.spacegroup)}, {str(self.unitcell)}")
         else:
             self.spacegroup = input("Could not determine spacegroup, enter now (eg. P321): ")
             self.unitcell = input("Could not determine unit cell, enter now (eg. 150 150 45 90 90 120): ")

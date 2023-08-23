@@ -20,7 +20,7 @@ pro_or_ana = str(
 
 if pro_or_ana == "p":
     run = sagasu_core.core()
-    projname, fa_path, highres, lowres, highsites, lowsites, ntry = run.get_input()
+    run.get_input()
     run.writepickle()
     if os.path.exists(os.path.join(path, "inps.pkl")):
         run.readpickle()
