@@ -936,7 +936,7 @@ eof
     def get_filenames_for_emma(self):
 
         self.pdb_files_for_emma = [os.path.join(os.getcwd(), f"{self.projname}/{str(i)}/{str(j)}/{self.projname}_fa.pdb") for i in range(self.highres, self.lowres) for j in range(self.lowsites, self.highsites)] 
-        parallel_filelist = list(combinations(pdb_files_for_emma, 2))
+        parallel_filelist = list(combinations(self.pdb_files_for_emma, 2))
         return parallel_filelist
 
     def emma_correlation_plot(self, emma_results):
