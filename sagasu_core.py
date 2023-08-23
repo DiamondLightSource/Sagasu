@@ -229,12 +229,26 @@ class core:
         file_handle.close()
 
     def shelxd_prep(self):
+        print("Running SHEXC...")
         os.system("module load ccp4")
+        print("Loaded shelx")
+        print(f"""
+shelxc {self.projname} > /dev/null 2>&1 <<EOF
+SAD aimless.sca
+SFAC {self.atomin}
+CELL {self.unitcell}
+SPAG {self.spacegroup}
+SHEL 999 {str(self.highres)}
+FIND {str(self.lowsites)}
+MIND -1.5
+FRES 5
+EOF
+                  """)
         os.system(
             f"""
 shelxc {self.projname} > /dev/null 2>&1 <<EOF
 SAD aimless.sca
-SFAC {self.atomin}
+SFAC {(self.atomin).upper}
 CELL {self.unitcell}
 SPAG {self.spacegroup}
 SHEL 999 {str(self.highres)}
@@ -285,8 +299,10 @@ eof
             symm_as_py_code = data_file_symm.as_py_code()
             unit_cell_match = re.search(r'unit_cell=\((.*?)\)', symm_as_py_code)
             self.unitcell = unit_cell_match.group(1)
+            self.unitcell = self.unitcell.replace(",", "")
             space_group_match = re.search(r'space_group_symbol="([^"]+)"', symm_as_py_code)
             self.spacegroup = space_group_match.group(1)
+            self.spacegroup = self.spacegroup.replace(" ", "")
         except:
             pass
         if self.unitcell and self.spacegroup:
