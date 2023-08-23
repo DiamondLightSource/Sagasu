@@ -34,9 +34,11 @@ class core:
 
     def get_input(self):
         self.projname = input("Name of project: ")
-        self.unitcell = str(input("Unit cell a b c al be ga: "))
-        self.spacegroup = str(input("Spacegroup eg. P212121: "))
+        #self.unitcell = str(input("Unit cell a b c al be ga: "))
+        #self.spacegroup = str(input("Spacegroup eg. P212121: "))
         # self.fa_path = input("Path to SHELXC outputs: ")
+        self.prasa_datain = input("HKL/mtz/sca input file: ")
+        self.get_unit_cell_and_sg()
         self.fa_path = os.getcwd()
         self.highres = int(10 * float(input("High resolution cutoff for grid: ")))
         self.lowres = int(10 * float(input("Low resolution cutoff for grid: ")))
@@ -44,7 +46,6 @@ class core:
         self.lowsites = int(input("Minimum number of sites to search: "))
         self.midsites = int(((self.highsites - self.lowsites) / 2) + self.lowsites)
         self.ntry = int(input("Number of trials: "))
-        self.prasa_datain = input("HKL/mtz/sca input file for prasa: ")
         self.atomin = input("Anomalous scatterer: ")
         self.clust = str(input("Run on (c)luster or (l)ocal machine? c/l ")).lower()
         self.clusteranalysis = str(
@@ -303,11 +304,12 @@ eof
         
 
     def get_unit_cell_and_sg(self):
-        mtz = mtz.object("aimless.mtz")
+        self.mtzfile = mtz.object(self.prasa_datain)
         if mtz.crystals():
-                crystal = mtz.crystals()[0]
-                self.unitcell = crystal.unit_cell().parameters()
-                self.spacegroup = crystal.space_group_info()
+                self.crystal = mtz.crystals()[0]
+                self.unitcell = self.crystal.unit_cell().parameters()
+                self.spacegroup = self.crystal.space_group_info()
+                print(f"Spacegroup and unit cell identified as {str(self.spacegroup)}, {str(self.unitcell)}")
         else:
             pass
         if self.unitcell and self.spacegroup:
