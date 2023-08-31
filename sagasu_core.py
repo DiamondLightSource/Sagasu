@@ -21,8 +21,6 @@ from iotbx.file_reader import any_file
 from itertools import combinations
 
 
-
-
 sns.set()
 
 
@@ -30,12 +28,59 @@ class core:
     def __init__(self):
         self.timestamp = datetime.now()
         self.path = os.getcwd()
-        self.user = os.getenv('USER')
+        self.user = os.getenv("USER")
+        self.env = {
+            "CCP4I_TCLTK": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/bin",
+            "CONDA_SHLVL": "2",
+            "CONDA_EXE": "/dls_sw/apps/python/miniforge/4.10.0-0/bin/conda",
+            "CLIBD_MON": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/lib/data/monomers/",
+            "PYTHON_BASE_HOME": "/dls_sw/apps/python/miniforge/4.10.0-0",
+            "LOADEDMODULES_modshare": "R/3.2.2:1:global/directories:1:shelx/ccp4:1:python/3.10:1:ccp4/8.0:1",
+            "CONDA_PREFIX": "/dls/science/groups/i23/pyenvs/sagasu_conda",
+            "MODULES_LMNOTUASKED_modshare": "R/3.2.2:1:global/directories:1:ccp4/8.0:1",
+            "CCP4": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0",
+            "CETC": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/etc",
+            "CBIN": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/bin",
+            "MODULES_CMD": "/usr/share/Modules/libexec/modulecmd.tcl",
+            "MODULES_LMPREREQ": "ccp4/8.0&global/directories&R:shelx/ccp4&ccp4",
+            "CONDA_PREFIX_1": "/dls_sw/apps/python/miniforge/4.10.0-0/envs/python3.10",
+            "warpdoc": "/dls_sw/apps/ccp4/8.0.015/arp_warp_8.0/manual",
+            "CLIB": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/lib",
+            "CONDA_PYTHON_EXE": "/dls_sw/apps/python/miniforge/4.10.0-0/bin/python",
+            "CRANK": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/share/ccp4i/crank",
+            "CLIBD": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/lib/data",
+            "CCP4_MASTER": "/dls_sw/apps/ccp4/8.0.015",
+            "_LMFILES__modshare": "/dls_sw/apps/Modules/modulefiles/python/3.10:1:/dls_sw/apps/Modules/modulefiles/ccp4/8.0:1:/dls_sw/apps/Modules/modulefiles/R/3.2.2:1:/dls_sw/apps/Modules/modulefiles/global/directories:1:/dls_sw/apps/Modules/modulefiles/shelx/ccp4:1",
+            "MODULES_LMALTNAME": "R/3.2.2&R/default&R:ccp4/8.0&ccp4/default&ccp4:shelx/ccp4&shelx/default&shelx:python/3.10&python/default&python",
+            "GSETTINGS_SCHEMA_DIR": "/dls/science/groups/i23/pyenvs/sagasu_conda/share/glib-2.0/schemas",
+            "MODULES_LMNOTUASKED": "global/directories:R/3.2.2:ccp4/8.0",
+            "R_HOME": "/dls_sw/apps/R/3.2.2/lib64/R",
+            "BALBES_ROOT": "/dls_sw/apps/ccp4/8.0.015/BALBES",
+            "LOADEDMODULES": "global/directories:R/3.2.2:ccp4/8.0:shelx/ccp4:python/3.10",
+            "MMCIFDIC": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/lib/ccp4/cif_mmdic.lib",
+            "CHTML": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/html",
+            "CONDA_PROMPT_MODIFIER": "(sagasu_conda)",
+            "warpbin": "/dls_sw/apps/ccp4/8.0.015/arp_warp_8.0/bin/bin-x86_64-Linux",
+            "SHELL": "/bin/bash",
+            "CCP4I_TOP": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/share/ccp4i",
+            "MANPATH_modshare": ":1:/var/cfengine/share/man:1",
+            "MODULES_LMALTNAME_modshare": "R/3.2.2&R/default&R:1:shelx/ccp4&shelx/default&shelx:1:python/3.10&python/default&python:1:ccp4/8.0&ccp4/default&ccp4:1",
+            "CINCL": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/include",
+            "MANPATH": "/var/cfengine/share/man:",
+            "MODULEPATH": "/etc/scl/modulefiles:/etc/scl/modulefiles:/etc/scl/modulefiles:/usr/share/Modules/modulefiles:/etc/modulefiles:/usr/share/modulefiles:/dls_sw/apps/Modules/modulefiles:/dls_sw/etc/modulefiles",
+            "MODULES_LMPREREQ_modshare": "shelx/ccp4&ccp4:1:ccp4/8.0&global/directories&R:1",
+            "MODULEPATH_modshare": "/etc/scl/modulefiles:1:/dls_sw/apps/Modules/modulefiles:1:/dls_sw/etc/modulefiles:1:/usr/share/Modules/modulefiles:2:/etc/modulefiles:2:/usr/share/modulefiles:2",
+            "CEXAM": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/examples",
+            "PATH": "/dls_sw/apps/python/miniforge/4.10.0-0/envs/python3.10/epics/bin/linux-x86_64:/dls/science/groups/i23/pyenvs/sagasu_conda/bin:/dls_sw/apps/python/miniforge/4.10.0-0/condabin:/dls_sw/apps/ccp4/8.0.015/arp_warp_8.0/bin/bin-x86_64-Linux:/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/etc:/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/bin:/dls_sw/apps/R/3.2.2/bin:/dls_sw/apps/R/3.2.2:/scratch/vwg85559/vscode/.vscode-server/bin/6c3e3dba23e8fadc360aed75ce363ba185c49794/bin/remote-cli:/usr/share/Modules/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/var/cfengine/bin:/home/i23user/bin:/home/vwg85559/bin/RIDL-master:/home/vwg85559/bin/SContent:/home/vwg85559/bin:/scratch/sw:/scratch/sw/pdbredo:/scratch/sw/bin:/scratch/sw/etc:/scratch/sw/usr/bin:/home/vwg85559/.local/bin:/home/i23user/bin/XZuiichi:/home/vwg85559/bin/cluster4xPrep:/scratch/Teams/usr/bin:/scratch/ChimeraX/usr/bin:/home/i23user/bin/Sagasu:/scratch/usr/lib64:/scratch/usr/share/doc:/home/i23user/bin/Sagasu:/scratch/blender-3.5.0-linux-x64/lib:/home/i23user/bin:/home/vwg85559/bin/RIDL-master:/home/vwg85559/bin/SContent:/home/vwg85559/bin:/scratch/sw:/scratch/sw/pdbredo:/scratch/sw/bin:/scratch/sw/etc:/scratch/sw/usr/bin:/home/vwg85559/.local/bin:/home/i23user/bin/XZuiichi:/home/vwg85559/bin/cluster4xPrep:/scratch/Teams/usr/bin:/scratch/ChimeraX/usr/bin:/home/i23user/bin/Sagasu:/scratch/usr/lib64:/scratch/usr/share/doc:/home/i23user/bin/Sagasu:/scratch/blender-3.5.0-linux-x64/lib:/home/i23user/bin:/home/vwg85559/bin/RIDL-master:/home/vwg85559/bin/SContent:/home/vwg85559/bin:/scratch/sw:/scratch/sw/pdbredo:/scratch/sw/bin:/scratch/sw/etc:/scratch/sw/usr/bin:/home/vwg85559/.local/bin:/home/i23user/bin/XZuiichi:/home/vwg85559/bin/cluster4xPrep:/scratch/Teams/usr/bin:/scratch/ChimeraX/usr/bin:/home/i23user/bin/Sagasu:/scratch/usr/lib64:/scratch/usr/share/doc:/home/i23user/bin/Sagasu:/scratch/blender-3.5.0-linux-x64/lib",
+            "_LMFILES_": "/dls_sw/apps/Modules/modulefiles/global/directories:/dls_sw/apps/Modules/modulefiles/R/3.2.2:/dls_sw/apps/Modules/modulefiles/ccp4/8.0:/dls_sw/apps/Modules/modulefiles/shelx/ccp4:/dls_sw/apps/Modules/modulefiles/python/3.10",
+            "MODULESHOME": "/usr/share/Modules",
+            "CONDA_DEFAULT_ENV": "/dls/science/groups/i23/pyenvs/sagasu_conda",
+        }
 
     def get_input(self):
         self.projname = input("Name of project: ")
-        #self.unitcell = str(input("Unit cell a b c al be ga: "))
-        #self.spacegroup = str(input("Spacegroup eg. P212121: "))
+        # self.unitcell = str(input("Unit cell a b c al be ga: "))
+        # self.spacegroup = str(input("Spacegroup eg. P212121: "))
         # self.fa_path = input("Path to SHELXC outputs: ")
         self.prasa_datain = input("HKL/mtz/sca input file: ")
         self.get_unit_cell_and_sg()
@@ -70,109 +115,146 @@ class core:
         client.connect("wilson")
         command = "scontrol token lifespan=3600"
         stdin, stdout, stderr = client.exec_command(command)
-        output = stdout.read().decode('utf-8')
+        output = stdout.read().decode("utf-8")
         self.token = None
-        for line in output.split('\n'):
-            if line.startswith('SLURM_JWT'):
-                self.token = line.split('=')[1].strip()
+        for line in output.split("\n"):
+            if line.startswith("SLURM_JWT"):
+                self.token = line.split("=")[1].strip()
             else:
                 pass
         client.close()
+        self.job_id_shelxd = []
+        self.job_id_afroprasa = []
 
     def submit_shelxd_job_slurm(self):
-        url = "http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/submit"
-        headers = {'X-SLURM-USER-NAME': f'{self.user}', 'X-SLURM-USER-TOKEN': f'{self.token}', 'Content-Type': 'application/json'}
-
-
-        script = "#!/bin/bash\n"
-        script += "#SBATCH --job-name=sagasu\n"
-        script += "#SBATCH --cpus-per-task=20\n"
-        script += "#SBATCH --mem-per-cpu=1G\n"
-        script += "#SBATCH --partition=cs04r\n"
-        script += "#SBATCH --array=0-" + (str(len(self.shelxd_folder_paths) - 1)) + "\n"
-        for i, folder in enumerate(self.shelxd_folder_paths):  
-            script += f"#SBATCH --output={folder}/shelxd_output.log\n"
-            script += f"#SBATCH --error={folder}/shelxd_error.log\n"
-            script += f"/dls/science/groups/i23/scripts/chris/Sagasu/shelxd.sh {str(self.projname + '_fa')}\n"
-
-        payload = {
-            'script': script,
-            'script_type': 'batch_script'
+        url = "https://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/submit"
+        headers = {
+            "X-SLURM-USER-NAME": f"{self.user}",
+            "X-SLURM-USER-TOKEN": self.token,
+            "Content-Type": "application/json",
         }
 
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        # if this doesnt work then use a tempfile workaround
+        for i, folder in enumerate(self.shelxd_folder_paths):
+            slurm_json = {
+                "job": {
+                    "name": "sagasu_shelxd",
+                    "ntasks": 1,
+                    "nodes": 1,
+                    "current_working_directory": self.path,
+                    "standard_input": "/dev/null",
+                    "standard_output": f"{folder}/shelxd_output.log",
+                    "standard_error": f"{folder}/shelxd_error.log",
+                    "cpus_per_task": 20,
+                    "partition": "cs04r",
+                    "environment": self.env,
+                },
+                "script": f"#!/bin/bash\ncd {folder}\n/dls/science/groups/i23/scripts/chris/Sagasu_slurm/Sagasu/shelxd.sh {str(self.projname + '_fa')}",
+            }
 
-        if response.status_code != 201:
-            print("SHELXD: Failed to submit array job")
-        else:
-            print("SHELXD: Array job submitted")
-            self.job_id_shelxd = response.json().get('job_id')
+            response = requests.post(url, headers=headers, data=json.dumps(slurm_json))
 
+            if response.status_code != 200:
+                print(response.text)
+            else:
+                self.job_id_shelxd.append(response.json().get("job_id"))
 
     def submit_afroprasa_job_slurm(self):
-        url = "http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/submit"
-        headers = {'X-SLURM-USER-NAME': f'{self.user}', 'X-SLURM-USER-TOKEN': f'{self.token}', 'Content-Type': 'application/json'}
+        url = "https://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/submit"
+        headers = {
+            "X-SLURM-USER-NAME": f"{self.user}",
+            "X-SLURM-USER-TOKEN": f"{self.token}",
+            "Content-Type": "application/json",
+        }
         hr = str(self.highres / 10)
         lr = str(self.lowres / 10)
 
-        script = "#!/bin/bash\n"
-        script += "#SBATCH --job-name=sagasu\n"
-        script += "#SBATCH --cpus-per-task=20\n"
-        script += "#SBATCH --mem-per-cpu=1G\n"
-        script += "#SBATCH --partition=cs04r\n"
-        script += "#SBATCH --array=0-" + (str(len(self.prasa_folder_paths) - 1)) + "\n"
-        for i, (folder, rescut) in enumerate(self.prasa_folder_paths):  
-            script += f"#SBATCH --output={folder}/afroprasa_output.log\n"
-            script += f"#SBATCH --error={folder}/afroprasa_error.log\n"
-            script += f"/dls/science/groups/i23/scripts/chris/Sagasu/afroprasa.sh {self.atomin} {self.midsites} {str(rescut)} {self.ntry} {lr} {hr} {self.highsites} {self.lowsites}\n"
+        # if this doesnt work then use a tempfile workaround
+        for i, (folder, rescut) in enumerate(self.prasa_folder_paths):
+            slurm_json = {
+                "job": {
+                    "name": "sagasu_afroprasa",
+                    "ntasks": 1,
+                    "nodes": 1,
+                    "current_working_directory": self.path,
+                    "standard_input": "/dev/null",
+                    "standard_output": f"{folder}/afroprasa_output.log",
+                    "standard_error": f"{folder}/afroprasa_error.log",
+                    "cpus_per_task": 20,
+                    "partition": "cs04r",
+                    "environment": self.env,
+                },
+                "script": f"#!/bin/bash\ncd {folder}\n/dls/science/groups/i23/scripts/chris/Sagasu_slurm/Sagasu/afroprasa.sh {self.atomin} {self.midsites} {str(rescut)} {self.ntry} {lr} {hr} {self.highsites} {self.lowsites}",
+            }
 
-        payload = {
-            'script': script,
-            'script_type': 'batch_script'
+            response = requests.post(url, headers=headers, data=json.dumps(slurm_json))
+
+            if response.status_code == 200:
+                self.job_id_afroprasa.append(response.json().get("job_id"))
+            else:
+                print(response.status_code)
+                print(response.text)
+
+    def wait_for_slurm_jobs(self):
+        jobs_url = "https://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/"
+        headers = {
+            "X-SLURM-USER-NAME": f"{self.user}",
+            "X-SLURM-USER-TOKEN": f"{self.token}",
         }
 
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
-
-        if response.status_code != 201:
-            print("Afroprasa: Failed to submit array job")
-        else:
-            print("Afroprasa: Array job submitted")     
-            self.job_id_afroprasa = response.json().get('job_id')
-  
-       
-    def wait_for_slurm_jobs(self):
-        afroprasa_url = f"http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/jobs/{self.job_id_afroprasa}"
-        shelxd_url = f"http://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/jobs/{self.job_id_shelxd}" 
-        headers = {'X-SLURM-USER-NAME': f'{self.user}', 'X-SLURM-USER-TOKEN': f'{self.token}'}
-        afroprasa_finished = False
         shelxd_finished = False
-        
+        shelxd_unfinished = []
+        afroprasa_finished = False
+        afroprasa_unfinished = []
+
         while not (afroprasa_finished and shelxd_finished):
+            if not shelxd_finished:
+                for shelxd_job in self.job_id_shelxd:
+                    shelxd_response = requests.get(
+                        f"{jobs_url}/{shelxd_job}", headers=headers
+                    )
+                    if shelxd_response.status_code == 200:
+                        if not shelxd_response.json().get("job_state") == "COMPLETED":
+                            shelxd_unfinished.append(shelxd_job)
+                        elif (
+                            shelxd_response.json().get("job_state") == "FAILED"
+                            or shelxd_response.json().get("job_state") == "CANCELLED"
+                        ):
+                            print(
+                                "Something went wrong and the job failed or was cancelled"
+                            )
+                    else:
+                        print(shelxd_response.status_code)
+                        print(shelxd_response.text)
+                    self.job_id_shelxd = shelxd_unfinished
 
-            afroprasa_response = requests.get(afroprasa_url, headers=headers)
-            shelxd_response = requests.get(shelxd_url, headers=headers)
+            if not afroprasa_finished:
+                for afroprasa_job in self.job_id_afroprasa:
+                    afroprasa_response = requests.get(
+                        f"{jobs_url}/{afroprasa_job}", headers=headers
+                    )
+                    if afroprasa_response.status_code == 200:
+                        if (
+                            not afroprasa_response.json().get("job_state")
+                            == "COMPLETED"
+                        ):
+                            afroprasa_unfinished.append(afroprasa_job)
+                        elif (
+                            afroprasa_response.json().get("job_state") == "FAILED"
+                            or afroprasa_response.json().get("job_state") == "CANCELLED"
+                        ):
+                            print(
+                                "Something went wrong and the job failed or was cancelled"
+                            )
+                    else:
+                        print(afroprasa_response.status_code)
+                        print(afroprasa_response.text)
+                self.job_id_shelxd = afroprasa_unfinished
 
-            if afroprasa_response.status_code != 200 or shelxd_response.status_code != 200:
-                print(f"Something went wrong. afroprasa status {afroprasa_response.text}, shelxd status {shelxd_response.text}")
-                return False
-
-            afroprasa_job_status = afroprasa_response.json().get('job_state')
-            shelxd_job_status = shelxd_response.json().get('job_state')
-
-            if not afroprasa_finished and afroprasa_job_status == 'COMPLETED':
-                afroprasa_finished = True
-
-            if not shelxd_finished and shelxd_job_status == 'COMPLETED':
+            if len(self.job_id_shelxd) == 0:
                 shelxd_finished = True
-
-            if not (afroprasa_finished and shelxd_finished):
-                time.sleep(5)
-
-            if afroprasa_job_status in ['FAILED', 'CANCELLED'] or shelxd_job_status in ['FAILED', 'CANCELLED']:
-                return False
-
-        return True
-
+            if len(self.job_id_afroprasa) == 0:
+                afroprasa_finished = True
 
     def writepickle(self):
         with open("inps.pkl", "wb") as f:
@@ -218,7 +300,6 @@ class core:
                 self.spacegroup,
             )
 
-
     def replace(self, file, pattern, subst):
         file_handle = open(file, "r")
         file_string = file_handle.read()
@@ -232,23 +313,11 @@ class core:
         print("Running SHEXC...")
         os.system("module load ccp4")
         print("Loaded shelx")
-        print(f"""
-shelxc {self.projname} > /dev/null 2>&1 <<EOF
-SAD aimless.sca
-SFAC {self.atomin}
-CELL {self.unitcell}
-SPAG {self.spacegroup}
-SHEL 999 {str(self.highres)}
-FIND {str(self.lowsites)}
-MIND -1.5
-FRES 5
-EOF
-                  """)
-        os.system(
+        print(
             f"""
 shelxc {self.projname} > /dev/null 2>&1 <<EOF
 SAD aimless.sca
-SFAC {(self.atomin).upper}
+SFAC {(self.atomin).upper()}
 CELL {self.unitcell}
 SPAG {self.spacegroup}
 SHEL 999 {str(self.highres)}
@@ -258,7 +327,22 @@ FRES 5
 EOF
                   """
         )
-# this preps for prasa and shelxd
+        os.system(
+            f"""
+shelxc {self.projname} > /dev/null 2>&1 <<EOF
+SAD aimless.sca
+SFAC {(self.atomin).upper()}
+CELL {self.unitcell}
+SPAG {self.spacegroup}
+SHEL 999 {str(self.highres)}
+FIND {str(self.lowsites)}
+MIND -1.5
+FRES 5
+EOF
+                  """
+        )
+
+    # this preps for prasa and shelxd
     def prasa_prep(self):
         os.system("module load ccp4")
         if self.prasa_datain.endswith(".hkl" or ".HKL"):
@@ -290,26 +374,33 @@ eof
         os.system(
             "ctruncate -hklin aimless.mtz -hklout truncate.mtz -colin '/*/*/[I(+),SIGI(+),I(-),SIGI(-)]' > /dev/null 2>&1"
         )
-        
 
     def get_unit_cell_and_sg(self):
         try:
             read_data_file = any_file(self.prasa_datain)
             data_file_symm = read_data_file.crystal_symmetry()
             symm_as_py_code = data_file_symm.as_py_code()
-            unit_cell_match = re.search(r'unit_cell=\((.*?)\)', symm_as_py_code)
+            unit_cell_match = re.search(r"unit_cell=\((.*?)\)", symm_as_py_code)
             self.unitcell = unit_cell_match.group(1)
             self.unitcell = self.unitcell.replace(",", "")
-            space_group_match = re.search(r'space_group_symbol="([^"]+)"', symm_as_py_code)
+            space_group_match = re.search(
+                r'space_group_symbol="([^"]+)"', symm_as_py_code
+            )
             self.spacegroup = space_group_match.group(1)
             self.spacegroup = self.spacegroup.replace(" ", "")
         except:
             pass
         if self.unitcell and self.spacegroup:
-            print(f"Spacegroup and unit cell identified as {str(self.spacegroup)}, {str(self.unitcell)}")
+            print(
+                f"Spacegroup and unit cell identified as {str(self.spacegroup)}, {str(self.unitcell)}"
+            )
         else:
-            self.spacegroup = input("Could not determine spacegroup, enter now (eg. P321): ")
-            self.unitcell = input("Could not determine unit cell, enter now (eg. 150 150 45 90 90 120): ")
+            self.spacegroup = input(
+                "Could not determine spacegroup, enter now (eg. P321): "
+            )
+            self.unitcell = input(
+                "Could not determine unit cell, enter now (eg. 150 150 45 90 90 120): "
+            )
 
     def run_sagasu_proc(self):
         os.chdir(self.path)
@@ -339,7 +430,7 @@ eof
                         ["shelxd", self.projname + "_fa"], stdout=subprocess.PIPE
                     )
                     os.chdir(self.path)
-                elif self.clust == "c":    
+                elif self.clust == "c":
                     self.shelxd_folder_paths.append(str(workpath))
                 else:
                     print("error in input...")
@@ -356,7 +447,7 @@ eof
                     "truncate.mtz",
                     (os.path.join(self.projname, str(i), str(i) + "_prasa")),
                 )
-                self.prasa_folder_paths.append((str(workpath), str(i/10)))
+                self.prasa_folder_paths.append((str(workpath), str(i / 10)))
             else:
                 pass
             i = i + 1
@@ -924,24 +1015,33 @@ eof
     def run_emma(self, emma_1, emma_2):
         command = f"module load phenix && phenix.emma --symmetry=scaled.mtz {str(file1)} {str(file2)}"  # Separate command and arguments
         result = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
-        return (emma_1, emma_2, result.stdout.decode('utf-8'))
+        return (emma_1, emma_2, result.stdout.decode("utf-8"))
 
     def get_filenames_for_emma(self):
-
-        self.pdb_files_for_emma = [os.path.join(os.getcwd(), f"{self.projname}/{str(i)}/{str(j)}/{self.projname}_fa.pdb") for i in range(self.highres, self.lowres) for j in range(self.lowsites, self.highsites)] 
+        self.pdb_files_for_emma = [
+            os.path.join(
+                os.getcwd(), f"{self.projname}/{str(i)}/{str(j)}/{self.projname}_fa.pdb"
+            )
+            for i in range(self.highres, self.lowres)
+            for j in range(self.lowsites, self.highsites)
+        ]
         parallel_filelist = list(combinations(self.pdb_files_for_emma, 2))
         return parallel_filelist
 
     def emma_correlation_plot(self, emma_results):
         pairs_pattern = r"Pairs:\s*(\d+)"
         singles_model1_pattern = r"Singles model 1:\s*(\d+)"
-        singles_model2_pattern = r"Singles model 2:\s*(\d+)"        
-        
+        singles_model2_pattern = r"Singles model 2:\s*(\d+)"
+
         percentages = []
-    
+
         for file in self.pdb_files_for_emma:
-            filename = str(os.path.basename(os.path.dirname(os.path.dirname(file)))) + "_" + str(os.path.basename(os.path.dirname(file)))
-            diagonalval = ([str(filename), str(filename), str(1)])
+            filename = (
+                str(os.path.basename(os.path.dirname(os.path.dirname(file))))
+                + "_"
+                + str(os.path.basename(os.path.dirname(file)))
+            )
+            diagonalval = [str(filename), str(filename), str(1)]
             percentages.append(diagonalval)
 
         for file1, file2, output in emma_results:
@@ -955,31 +1055,61 @@ eof
                 singles_model2_number = singles_model2_match.group(1)
             else:
                 pass
-            
+
             if pairs_number and singles_model1_number and singles_model2_number:
-                percentage = np.around((float(pairs_number) / (float(pairs_number) + float(singles_model1_number) + float(singles_model2_number))), 2)
-                filename1 = str(os.path.basename(os.path.dirname(os.path.dirname(file1)))) + "_" + str(os.path.basename(os.path.dirname(file1)))
-                filename2 = str(os.path.basename(os.path.dirname(os.path.dirname(file2)))) + "_" + str(os.path.basename(os.path.dirname(file2)))
+                percentage = np.around(
+                    (
+                        float(pairs_number)
+                        / (
+                            float(pairs_number)
+                            + float(singles_model1_number)
+                            + float(singles_model2_number)
+                        )
+                    ),
+                    2,
+                )
+                filename1 = (
+                    str(os.path.basename(os.path.dirname(os.path.dirname(file1))))
+                    + "_"
+                    + str(os.path.basename(os.path.dirname(file1)))
+                )
+                filename2 = (
+                    str(os.path.basename(os.path.dirname(os.path.dirname(file2))))
+                    + "_"
+                    + str(os.path.basename(os.path.dirname(file2)))
+                )
                 percentages.append([str(filename1), str(filename2), str(percentage)])
             else:
                 pass
-        
-        df = pd.DataFrame(percentages, columns=["filename_1", "filename_2", "percentage"])
-        df_pivot1 = df.pivot(index='filename_2', columns='filename_1', values='percentage')
+
+        df = pd.DataFrame(
+            percentages, columns=["filename_1", "filename_2", "percentage"]
+        )
+        df_pivot1 = df.pivot(
+            index="filename_2", columns="filename_1", values="percentage"
+        )
         df_pivot1.fillna(0, inplace=True)
 
-        df_pivot2 = df.pivot(index='filename_1', columns='filename_2', values='percentage')
+        df_pivot2 = df.pivot(
+            index="filename_1", columns="filename_2", values="percentage"
+        )
         df_pivot2.fillna(0, inplace=True)
 
         df_pivot3 = df_pivot1 + df_pivot2
         df_pivot3 = df_pivot3.multiply(100)
         df_pivot3.replace(200, 100, inplace=True)
-        
-        fig = px.imshow(df_pivot3, x=df_pivot3.columns, y=df_pivot3.index, text_auto=True, aspect="auto", color_continuous_scale="bluered")
-        fig.update_layout(width=1000,height=1000)
-        fig.write_html(self.projname + "_figures/emmamatrix.html")    
-        
-        
+
+        fig = px.imshow(
+            df_pivot3,
+            x=df_pivot3.columns,
+            y=df_pivot3.index,
+            text_auto=True,
+            aspect="auto",
+            color_continuous_scale="bluered",
+        )
+        fig.update_layout(width=1000, height=1000)
+        fig.write_html(self.projname + "_figures/emmamatrix.html")
+
     def writehtml(self):
         self.html_init = """
         <!doctype html>
@@ -1009,7 +1139,7 @@ eof
             lowsites=str(self.lowsites),
             highsites=str(self.highsites),
         )
-        
+
         self.html_topten = """
         <p><span style="font-family:courier new,courier,monospace;"><span style="font-size:18px;"><strong><u>Here are the top 10 hits:</u></strong></span></span></p>
 
@@ -1084,3 +1214,97 @@ eof
         </body>
         </html>"""
             )
+
+
+env = {
+    "CCP4I_TCLTK": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/bin",
+    "CONDA_SHLVL": "2",
+    "CONDA_EXE": "/dls_sw/apps/python/miniforge/4.10.0-0/bin/conda",
+    "CLIBD_MON": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/lib/data/monomers/",
+    "PYTHON_BASE_HOME": "/dls_sw/apps/python/miniforge/4.10.0-0",
+    "MODULES_RUN_QUARANTINE": "LD_LIBRARY_PATH LD_PRELOAD",
+    "LANG": "en_GB.UTF-8",
+    "HISTCONTROL": "ignoredups",
+    "HOSTNAME": "ws370.diamond.ac.uk",
+    "OPENBLAS_NUM_THREADS": "32",
+    "softwaredir": "/dls_sw/apps",
+    "PATH_modshare": "/scratch/usr/lib64:1:/scratch/ChimeraX/usr/bin:1:/scratch/sw:1:/dls_sw/apps/ccp4/8.0.015/arp_warp_8.0/bin/bin-x86_64-Linux:1:/scratch/sw/usr/bin:1:/dls_sw/apps/R/3.2.2:1:/usr/bin:1:/home/vwg85559/.local/bin:1:/scratch/sw/etc:1:/home/vwg85559/bin:1:/usr/share/Modules/bin:1:/usr/local/bin:1:/scratch/vwg85559/vscode/.vscode-server/bin/6c3e3dba23e8fadc360aed75ce363ba185c49794/bin/remote-cli:1:/var/cfengine/bin:1:/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/etc:1:/scratch/sw/pdbredo:1:/home/vwg85559/bin/cluster4xPrep:1:/home/i23user/bin/Sagasu:1:/home/vwg85559/bin/SContent:1:/scratch/sw/bin:1:/home/i23user/bin/XZuiichi:1:/dls_sw/apps/R/3.2.2/bin:1:/scratch/Teams/usr/bin:1:/home/i23user/bin:1:/usr/sbin:1:/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/bin:1:/scratch/blender-3.5.0-linux-x64/lib:1:/usr/local/sbin:1:/home/vwg85559/bin/RIDL-master:1:/scratch/usr/share/doc:1",
+    "LOADEDMODULES_modshare": "R/3.2.2:1:global/directories:1:shelx/ccp4:1:python/3.10:1:ccp4/8.0:1",
+    "COLORTERM": "truecolor",
+    "GSETTINGS_SCHEMA_DIR_CONDA_BACKUP": "",
+    "CONDA_PREFIX": "/dls/science/groups/i23/pyenvs/sagasu_conda",
+    "MODULES_LMNOTUASKED_modshare": "R/3.2.2:1:global/directories:1:ccp4/8.0:1",
+    "ISPYB_CONFIG_FILE": "/dls_sw/dasc/mariadb/credentials/ispyb.cfg",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "CCP4": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0",
+    "CCP4_OPEN": "UNKNOWN",
+    "CETC": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/etc",
+    "S_COLORS": "auto",
+    "CCP4_SCR": "/dls/tmp/vwg85559",
+    "_CE_M": "",
+    "which_declare": "declare -f",
+    "CBIN": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/bin",
+    "XDG_SESSION_ID": "65",
+    "MODULES_CMD": "/usr/share/Modules/libexec/modulecmd.tcl",
+    "USER": "vwg85559",
+    "MODULES_LMPREREQ": "ccp4/8.0&global/directories&R:shelx/ccp4&ccp4",
+    "CONDA_PREFIX_1": "/dls_sw/apps/python/miniforge/4.10.0-0/envs/python3.10",
+    "warpdoc": "/dls_sw/apps/ccp4/8.0.015/arp_warp_8.0/manual",
+    "SELINUX_ROLE_REQUESTED": "",
+    "GFORTRAN_UNBUFFERED_PRECONNECTED": "1",
+    "CLIB": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/lib",
+    "PWD": "/dls/i23/data/2023/cm33851-3/processing/chris/slurmy/20/20_prasa",
+    "SSH_ASKPASS": "/usr/libexec/openssh/gnome-ssh-askpass",
+    "HOME": "/home/vwg85559",
+    "CONDA_PYTHON_EXE": "/dls_sw/apps/python/miniforge/4.10.0-0/bin/python",
+    "BROWSER": "/scratch/vwg85559/vscode/.vscode-server/bin/6c3e3dba23e8fadc360aed75ce363ba185c49794/bin/helpers/browser.sh",
+    "VSCODE_GIT_ASKPASS_NODE": "/scratch/vwg85559/vscode/.vscode-server/bin/6c3e3dba23e8fadc360aed75ce363ba185c49794/node",
+    "TERM_PROGRAM": "vscode",
+    "SSH_CLIENT": "172.23.100.100 36600 22",
+    "TERM_PROGRAM_VERSION": "1.81.1",
+    "SELINUX_LEVEL_REQUESTED": "",
+    "CRANK": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/share/ccp4i/crank",
+    "CLIBD": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/lib/data",
+    "XDG_DATA_DIRS": "/home/vwg85559/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share",
+    "CCP4_MASTER": "/dls_sw/apps/ccp4/8.0.015",
+    "_LMFILES__modshare": "/dls_sw/apps/Modules/modulefiles/python/3.10:1:/dls_sw/apps/Modules/modulefiles/ccp4/8.0:1:/dls_sw/apps/Modules/modulefiles/R/3.2.2:1:/dls_sw/apps/Modules/modulefiles/global/directories:1:/dls_sw/apps/Modules/modulefiles/shelx/ccp4:1",
+    "MODULES_LMALTNAME": "R/3.2.2&R/default&R:ccp4/8.0&ccp4/default&ccp4:shelx/ccp4&shelx/default&shelx:python/3.10&python/default&python",
+    "_CE_CONDA": "",
+    "GSETTINGS_SCHEMA_DIR": "/dls/science/groups/i23/pyenvs/sagasu_conda/share/glib-2.0/schemas",
+    "MODULES_LMNOTUASKED": "global/directories:R/3.2.2:ccp4/8.0",
+    "VSCODE_IPC_HOOK_CLI": "/run/user/1015129/vscode-ipc-dc87649e-146a-45f3-bc9a-daf0d0a9465a.sock",
+    "R_HOME": "/dls_sw/apps/R/3.2.2/lib64/R",
+    "BALBES_ROOT": "/dls_sw/apps/ccp4/8.0.015/BALBES",
+    "LOADEDMODULES": "global/directories:R/3.2.2:ccp4/8.0:shelx/ccp4:python/3.10",
+    "MMCIFDIC": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/lib/ccp4/cif_mmdic.lib",
+    "CHTML": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/html",
+    "CONDA_PROMPT_MODIFIER": "(sagasu_conda)",
+    "warpbin": "/dls_sw/apps/ccp4/8.0.015/arp_warp_8.0/bin/bin-x86_64-Linux",
+    "MAIL": "/var/spool/mail/vwg85559",
+    "VSCODE_GIT_ASKPASS_MAIN": "/scratch/vwg85559/vscode/.vscode-server/bin/6c3e3dba23e8fadc360aed75ce363ba185c49794/extensions/git/dist/askpass-main.js",
+    "localTEMP": "/tmp/vwg85559",
+    "networkTEMP": "/dls/tmp/vwg85559",
+    "TERM": "xterm-256color",
+    "SHELL": "/bin/bash",
+    "CCP4I_TOP": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/share/ccp4i",
+    "MANPATH_modshare": ":1:/var/cfengine/share/man:1",
+    "MODULES_LMALTNAME_modshare": "R/3.2.2&R/default&R:1:shelx/ccp4&shelx/default&shelx:1:python/3.10&python/default&python:1:ccp4/8.0&ccp4/default&ccp4:1",
+    "CINCL": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/include",
+    "SELINUX_USE_CURRENT_RANGE": "",
+    "SHLVL": "5",
+    "VSCODE_GIT_IPC_HANDLE": "/run/user/1015129/vscode-git-22e00c5660.sock",
+    "MANPATH": "/var/cfengine/share/man:",
+    "MODULEPATH": "/etc/scl/modulefiles:/etc/scl/modulefiles:/etc/scl/modulefiles:/usr/share/Modules/modulefiles:/etc/modulefiles:/usr/share/modulefiles:/dls_sw/apps/Modules/modulefiles:/dls_sw/etc/modulefiles",
+    "LOGNAME": "vwg85559",
+    "MODULES_LMPREREQ_modshare": "shelx/ccp4&ccp4:1:ccp4/8.0&global/directories&R:1",
+    "DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/1015129/bus",
+    "GIT_ASKPASS": "/scratch/vwg85559/vscode/.vscode-server/bin/6c3e3dba23e8fadc360aed75ce363ba185c49794/extensions/git/dist/askpass.sh",
+    "MODULEPATH_modshare": "/etc/scl/modulefiles:1:/dls_sw/apps/Modules/modulefiles:1:/dls_sw/etc/modulefiles:1:/usr/share/Modules/modulefiles:2:/etc/modulefiles:2:/usr/share/modulefiles:2",
+    "CEXAM": "/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/examples",
+    "PATH": "/dls_sw/apps/python/miniforge/4.10.0-0/envs/python3.10/epics/bin/linux-x86_64:/dls/science/groups/i23/pyenvs/sagasu_conda/bin:/dls_sw/apps/python/miniforge/4.10.0-0/condabin:/dls_sw/apps/ccp4/8.0.015/arp_warp_8.0/bin/bin-x86_64-Linux:/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/etc:/dls_sw/apps/ccp4/8.0.015/ccp4-8.0/bin:/dls_sw/apps/R/3.2.2/bin:/dls_sw/apps/R/3.2.2:/scratch/vwg85559/vscode/.vscode-server/bin/6c3e3dba23e8fadc360aed75ce363ba185c49794/bin/remote-cli:/usr/share/Modules/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/var/cfengine/bin:/home/i23user/bin:/home/vwg85559/bin/RIDL-master:/home/vwg85559/bin/SContent:/home/vwg85559/bin:/scratch/sw:/scratch/sw/pdbredo:/scratch/sw/bin:/scratch/sw/etc:/scratch/sw/usr/bin:/home/vwg85559/.local/bin:/home/i23user/bin/XZuiichi:/home/vwg85559/bin/cluster4xPrep:/scratch/Teams/usr/bin:/scratch/ChimeraX/usr/bin:/home/i23user/bin/Sagasu:/scratch/usr/lib64:/scratch/usr/share/doc:/home/i23user/bin/Sagasu:/scratch/blender-3.5.0-linux-x64/lib:/home/i23user/bin:/home/vwg85559/bin/RIDL-master:/home/vwg85559/bin/SContent:/home/vwg85559/bin:/scratch/sw:/scratch/sw/pdbredo:/scratch/sw/bin:/scratch/sw/etc:/scratch/sw/usr/bin:/home/vwg85559/.local/bin:/home/i23user/bin/XZuiichi:/home/vwg85559/bin/cluster4xPrep:/scratch/Teams/usr/bin:/scratch/ChimeraX/usr/bin:/home/i23user/bin/Sagasu:/scratch/usr/lib64:/scratch/usr/share/doc:/home/i23user/bin/Sagasu:/scratch/blender-3.5.0-linux-x64/lib:/home/i23user/bin:/home/vwg85559/bin/RIDL-master:/home/vwg85559/bin/SContent:/home/vwg85559/bin:/scratch/sw:/scratch/sw/pdbredo:/scratch/sw/bin:/scratch/sw/etc:/scratch/sw/usr/bin:/home/vwg85559/.local/bin:/home/i23user/bin/XZuiichi:/home/vwg85559/bin/cluster4xPrep:/scratch/Teams/usr/bin:/scratch/ChimeraX/usr/bin:/home/i23user/bin/Sagasu:/scratch/usr/lib64:/scratch/usr/share/doc:/home/i23user/bin/Sagasu:/scratch/blender-3.5.0-linux-x64/lib",
+    "_LMFILES_": "/dls_sw/apps/Modules/modulefiles/global/directories:/dls_sw/apps/Modules/modulefiles/R/3.2.2:/dls_sw/apps/Modules/modulefiles/ccp4/8.0:/dls_sw/apps/Modules/modulefiles/shelx/ccp4:/dls_sw/apps/Modules/modulefiles/python/3.10",
+    "MODULESHOME": "/usr/share/Modules",
+    "CONDA_DEFAULT_ENV": "/dls/science/groups/i23/pyenvs/sagasu_conda",
+    "HISTSIZE": "1000",
+    "XML_CATALOG_FILES": "file:///dls/science/groups/i23/pyenvs/sagasu_conda/etc/xml/catalog file:///etc/xml/catalog",
+}
