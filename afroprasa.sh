@@ -1,7 +1,3 @@
-. /etc/profile.d/modules.sh
-
-module load ccp4
-
 afro HKLIN truncate.mtz HKLOUT afro.mtz << eof
 TARG SAD
 Xtal S-SAD
