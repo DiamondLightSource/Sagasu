@@ -79,9 +79,6 @@ class core:
 
     def get_input(self):
         self.projname = input("Name of project: ")
-        # self.unitcell = str(input("Unit cell a b c al be ga: "))
-        # self.spacegroup = str(input("Spacegroup eg. P212121: "))
-        # self.fa_path = input("Path to SHELXC outputs: ")
         self.prasa_datain = input("HKL/mtz/sca input file: ")
         self.get_unit_cell_and_sg()
         self.fa_path = os.getcwd()
