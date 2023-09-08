@@ -1,4 +1,4 @@
-#!/dls/science/groups/i23/pyenvs/ctrl_conda python3
+#!/dls/science/groups/i23/pyenvs/sagasu_conda python3
 
 from datetime import datetime
 import os
@@ -12,12 +12,13 @@ import numpy as np
 import pickle
 import glob
 from multiprocessing import Pool
-
-# from mpl_toolkits.mplot3d import Axes3D
 import shutil
 from pathlib import Path
 import subprocess
 import time
+from iotbx.file_reader import any_file
+from itertools import combinations
+
 
 # import drmaa2
 from drmaa2 import JobSession, JobTemplate, JobInfo, Drmaa2Exception
@@ -33,9 +34,8 @@ class core:
 
     def get_input(self):
         self.projname = input("Name of project: ")
-        self.unitcell = str(input("Unit cell a b c al be ga: "))
-        self.spacegroup = str(input("Spacegroup eg. P212121: "))
-        # self.fa_path = input("Path to SHELXC outputs: ")
+        self.prasa_datain = input("HKL/mtz/sca input file: ")
+        self.get_unit_cell_and_sg()
         self.fa_path = os.getcwd()
         self.highres = int(10 * float(input("High resolution cutoff for grid: ")))
         self.lowres = int(10 * float(input("Low resolution cutoff for grid: ")))
@@ -43,12 +43,9 @@ class core:
         self.lowsites = int(input("Minimum number of sites to search: "))
         self.midsites = int(((self.highsites - self.lowsites) / 2) + self.lowsites)
         self.ntry = int(input("Number of trials: "))
-        self.prasa_datain = input("HKL/mtz/sca input file for prasa: ")
         self.atomin = input("Anomalous scatterer: ")
         self.clust = str(input("Run on (c)luster or (l)ocal machine? c/l ")).lower()
-        self.clusteranalysis = str(
-            input("Run cluster analysis after (time consuming)? y/n ")
-        ).lower()
+        self.clusteranalysis = "y"
         self.insin = os.path.join(self.fa_path, self.projname + "_fa.ins")
         self.hklin = os.path.join(self.fa_path, self.projname + "_fa.hkl")
         self.writepickle()
@@ -75,7 +72,9 @@ class core:
                 "output_path": str(workpath),
                 "error_path": str(workpath),
                 "queue_name": "low.q",
-                "implementation_specific": {"uge_jt_pe": "smp",},
+                "implementation_specific": {
+                    "uge_jt_pe": "smp",
+                },
             }
         )
         return shelxd_jt
@@ -105,7 +104,9 @@ class core:
                 "output_path": str(workpath),
                 "error_path": str(workpath),
                 "queue_name": "low.q",
-                "implementation_specific": {"uge_jt_pe": "smp",},
+                "implementation_specific": {
+                    "uge_jt_pe": "smp",
+                },
             }
         )
         return afroprasa_jt
@@ -131,26 +132,17 @@ class core:
                     self.clust,
                     self.insin,
                     self.hklin,
+                    self.atomin,
+                    self.prasa_datain,
+                    self.midsites,
+                    self.unitcell,
+                    self.spacegroup,
                 ],
                 f,
             )
 
     def readpickle(self):
         with open("inps.pkl", "rb") as f:
-            (
-                [
-                    projname,
-                    lowres,
-                    highres,
-                    lowsites,
-                    highsites,
-                    ntry,
-                    clusteranalysis,
-                    clust,
-                    insin,
-                    hklin,
-                ]
-            ) = pickle.load(f)
             (
                 self.projname,
                 self.lowres,
@@ -162,30 +154,13 @@ class core:
                 self.clust,
                 self.insin,
                 self.hklin,
-            ) = (
-                projname,
-                lowres,
-                highres,
-                lowsites,
-                highsites,
-                ntry,
-                clusteranalysis,
-                clust,
-                insin,
-                hklin,
-            )
-        return (
-            self.projname,
-            self.lowres,
-            self.highres,
-            self.lowsites,
-            self.highsites,
-            self.ntry,
-            self.clusteranalysis,
-            self.clust,
-            self.insin,
-            self.hklin,
-        )
+                self.atomin,
+                self.prasa_datain,
+                self.midsites,
+                self.unitcell,
+                self.spacegroup,
+            ) = pickle.load(f)
+
 
     def replace(self, file, pattern, subst):
         file_handle = open(file, "r")
@@ -197,12 +172,28 @@ class core:
         file_handle.close()
 
     def shelxd_prep(self):
+        print("Running SHEXC...")
         os.system("module load ccp4")
+        print("Loaded shelx")
+        print(
+            f"""
+shelxc {self.projname} > /dev/null 2>&1 <<EOF
+SAD aimless.sca
+SFAC {(self.atomin).upper()}
+CELL {self.unitcell}
+SPAG {self.spacegroup}
+SHEL 999 {str(self.highres)}
+FIND {str(self.lowsites)}
+MIND -1.5
+FRES 5
+EOF
+                  """
+        )
         os.system(
             f"""
 shelxc {self.projname} > /dev/null 2>&1 <<EOF
 SAD aimless.sca
-SFAC {self.atomin}
+SFAC {(self.atomin).upper()}
 CELL {self.unitcell}
 SPAG {self.spacegroup}
 SHEL 999 {str(self.highres)}
@@ -213,6 +204,7 @@ EOF
                   """
         )
 
+    # this preps for prasa and shelxd
     def prasa_prep(self):
         os.system("module load ccp4")
         if self.prasa_datain.endswith(".hkl" or ".HKL"):
@@ -244,6 +236,33 @@ eof
         os.system(
             "ctruncate -hklin aimless.mtz -hklout truncate.mtz -colin '/*/*/[I(+),SIGI(+),I(-),SIGI(-)]' > /dev/null 2>&1"
         )
+
+    def get_unit_cell_and_sg(self):
+        try:
+            read_data_file = any_file(self.prasa_datain)
+            data_file_symm = read_data_file.crystal_symmetry()
+            symm_as_py_code = data_file_symm.as_py_code()
+            unit_cell_match = re.search(r"unit_cell=\((.*?)\)", symm_as_py_code)
+            self.unitcell = unit_cell_match.group(1)
+            self.unitcell = self.unitcell.replace(",", "")
+            space_group_match = re.search(
+                r'space_group_symbol="([^"]+)"', symm_as_py_code
+            )
+            self.spacegroup = space_group_match.group(1)
+            self.spacegroup = self.spacegroup.replace(" ", "")
+        except:
+            pass
+        if self.unitcell and self.spacegroup:
+            print(
+                f"Spacegroup and unit cell identified as {str(self.spacegroup)}, {str(self.unitcell)}"
+            )
+        else:
+            self.spacegroup = input(
+                "Could not determine spacegroup, enter now (eg. P321): "
+            )
+            self.unitcell = input(
+                "Could not determine unit cell, enter now (eg. 150 150 45 90 90 120): "
+            )
 
     def run_sagasu_proc(self):
         self.session = JobSession()
@@ -421,14 +440,18 @@ eof
         # might have to use the w.write(data[:-1]) to get rid of last whitespace in file
 
     def parse_prasa_txt(self, number, prasa_file_path):
-        with open(prasa_file_path, 'r') as f:
+        with open(prasa_file_path, "r") as f:
             lines = f.readlines()
 
         candidate_data = []
         number = float(number / 10)
         for line in lines:
-            if line.startswith("End of trial") and line.rstrip().endswith("(candidate for a solution)"):
-                stripped_line = ''.join(filter(lambda x: x.isdigit() or x == '.' or x == ' ', line))
+            if line.startswith("End of trial") and line.rstrip().endswith(
+                "(candidate for a solution)"
+            ):
+                stripped_line = "".join(
+                    filter(lambda x: x.isdigit() or x == "." or x == " ", line)
+                )
                 numbers = stripped_line.split()
                 candidate_data.append([number] + [float(num) for num in numbers])
 
@@ -450,32 +473,32 @@ eof
             copy_pdb = False
 
         return (candidate_data, copy_pdb)
-    
-    def prasa_results_concurrent(self):
-        results_folder = f"{self.projname}_results"
-        pdbs_folder = os.path.join(results_folder, "pdbs")
-        os.makedirs(results_folder, exist_ok=True)
-        os.makedirs(pdbs_folder, exist_ok=True)
 
-        with Pool() as pool:
-            low = self.lowres * 10
-            high = self.highres * 10
-            args = [number for number in range(low, high)]
-            results = pool.starmap(self.process_prasa_file, args)
+    # def prasa_results_concurrent(self):
+    #     results_folder = f"{self.projname}_results"
+    #     pdbs_folder = os.path.join(results_folder, "pdbs")
+    #     os.makedirs(results_folder, exist_ok=True)
+    #     os.makedirs(pdbs_folder, exist_ok=True)
 
-        with open(os.path.join(results_folder, "prasa.csv"), 'w', newline='') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(['res', 'CC', 'CCRange', 'CCAll'])
+    #     with Pool() as pool:
+    #         low = self.lowres * 10
+    #         high = self.highres * 10
+    #         args = [number for number in range(low, high)]
+    #         results = pool.starmap(self.process_prasa_file, args)
 
-            for (number, (candidate_data, copy_pdb)) in zip(range(low, high), results):
-                if candidate_data:
-                    for data in candidate_data:
-                        csv_writer.writerow(data)
+    #     with open(os.path.join(results_folder, "prasa.csv"), 'w', newline='') as csvfile:
+    #         csv_writer = csv.writer(csvfile)
+    #         csv_writer.writerow(['res', 'CC', 'CCRange', 'CCAll'])
 
-                    if copy_pdb:
-                        prasa_folder = os.path.join(self.projname, str(number), f"{number}_prasa")
-                        pdb_file_path = os.path.join(prasa_folder, "prasa.pdb")
-                        shutil.copy2(pdb_file_path, os.path.join(pdbs_folder, f"{number}_prasa.pdb"))
+    #         for (number, (candidate_data, copy_pdb)) in zip(range(low, high), results):
+    #             if candidate_data:
+    #                 for data in candidate_data:
+    #                     csv_writer.writerow(data)
+
+    #                 if copy_pdb:
+    #                     prasa_folder = os.path.join(self.projname, str(number), f"{number}_prasa")
+    #                     pdb_file_path = os.path.join(prasa_folder, "prasa.pdb")
+    #                     shutil.copy2(pdb_file_path, os.path.join(pdbs_folder, f"{number}_prasa.pdb"))
 
     def run_sagasu_analysis(self):
         ccoutliers_torun = []
@@ -864,10 +887,10 @@ eof
             top.iloc[[1], [1]].values[0],
         )
         (firstres, firstsites, secondres, secondsites) = (
-            ((firstres * 10).astype(np.int)).item(0),
-            (firstsites.astype(np.int)).item(0),
-            ((secondres * 10).astype(np.int)).item(0),
-            (secondsites.astype(np.int)).item(0),
+            ((firstres * 10).astype(np.int32)).item(0),
+            (firstsites.astype(np.int32)).item(0),
+            ((secondres * 10).astype(np.int32)).item(0),
+            (secondsites.astype(np.int32)).item(0),
         )
         with open(
             self.path
@@ -919,6 +942,111 @@ eof
             + str(secondsites)
         )
 
+    def run_emma(self, emma_1, emma_2):
+        command = f"module load phenix > /dev/null 2>&1 && phenix.emma --symmetry=aimless.mtz {str(emma_1)} {str(emma_2)}"
+        result = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
+        # filename1 = str(os.path.basename(os.path.dirname(os.path.dirname(emma_1)))) + str(os.path.basename(os.path.dirname(emma_1)))
+        # filename2 = str(os.path.basename(os.path.dirname(os.path.dirname(emma_2)))) + str(os.path.basename(os.path.dirname(emma_2)))
+        # output = os.path.join(self.path, f"{self.projname}_results", f"{filename1}_{filename2}")
+        #     with open(output, "w") as emmafile:
+        #         emmafile.write(result.stdout.decode("utf-8"))
+        return (emma_1, emma_2, result.stdout.decode("utf-8"))
+
+    def get_filenames_for_emma(self):
+        self.pdb_files_for_emma = [
+            os.path.join(
+                os.getcwd(), f"{self.projname}/{str(i)}/{str(j)}/{self.projname}_fa.pdb"
+            )
+            for i in range(self.highres, self.lowres)
+            for j in range(self.lowsites, self.highsites)
+        ]
+        parallel_filelist = list(combinations(self.pdb_files_for_emma, 2))
+        print(len(parallel_filelist))
+        # with open("parallel_filelist.txt", 'w') as file:
+        #     for line in parallel_filelist:
+        #         file.write(str(line) + '\n')
+        return parallel_filelist
+
+    def emma_correlation_plot(self, emma_results):
+        pairs_pattern = r"Pairs:\s*(\d+)"
+        singles_model1_pattern = r"Singles model 1:\s*(\d+)"
+        singles_model2_pattern = r"Singles model 2:\s*(\d+)"
+
+        percentages = []
+
+        for file in self.pdb_files_for_emma:
+            filename = (
+                str(os.path.basename(os.path.dirname(os.path.dirname(file))))
+                + "_"
+                + str(os.path.basename(os.path.dirname(file)))
+            )
+            diagonalval = [str(filename), str(filename), str(1)]
+            percentages.append(diagonalval)
+
+        for file1, file2, output in emma_results:
+            pairs_match = re.search(pairs_pattern, output)
+            singles_model1_match = re.search(singles_model1_pattern, output)
+            singles_model2_match = re.search(singles_model2_pattern, output)
+
+            if pairs_match and singles_model1_match and singles_model2_match:
+                pairs_number = pairs_match.group(1)
+                singles_model1_number = singles_model1_match.group(1)
+                singles_model2_number = singles_model2_match.group(1)
+            else:
+                pass
+
+            if pairs_number and singles_model1_number and singles_model2_number:
+                percentage = np.around(
+                    (
+                        float(pairs_number)
+                        / (
+                            float(pairs_number)
+                            + float(singles_model1_number)
+                            + float(singles_model2_number)
+                        )
+                    ),
+                    2,
+                )
+                filename1 = (
+                    str(os.path.basename(os.path.dirname(os.path.dirname(file1))))
+                    + "_"
+                    + str(os.path.basename(os.path.dirname(file1)))
+                )
+                filename2 = (
+                    str(os.path.basename(os.path.dirname(os.path.dirname(file2))))
+                    + "_"
+                    + str(os.path.basename(os.path.dirname(file2)))
+                )
+                percentages.append([str(filename1), str(filename2), str(percentage)])
+            else:
+                pass
+
+        df = pd.DataFrame(
+            percentages, columns=["filename_1", "filename_2", "percentage"]
+        )
+        df_pivot1 = df.pivot(
+            index="filename_2", columns="filename_1", values="percentage"
+        )
+        df_pivot1.fillna(0, inplace=True)
+
+        df_pivot2 = df.pivot(
+            index="filename_1", columns="filename_2", values="percentage"
+        )
+        df_pivot2.fillna(0, inplace=True)
+
+
+        fig = px.imshow(
+            df_pivot1,
+            x=df_pivot1.columns,
+            y=df_pivot1.index,
+            text_auto=True,
+            aspect="auto",
+            color_continuous_scale="greens",
+        )
+        fig.update_layout(width=1000, height=1000)
+        fig.write_html(self.projname + "_figures/emmamatrix.html")
+        print("Written emma file")
+
     def writehtml(self):
         self.html_init = """
         <!doctype html>
@@ -937,6 +1065,8 @@ eof
         <hr />
         
         <p><a href="./{projname}_figures/vectoroutliers.html">Vector Outliers Overview</a></p>
+        
+        <p><a href="./{projname}_figures/emmamatrix.html">Phenix EMMA Correlation Heatmap</a></p>
         """.format(
             projname=self.projname,
             ntry=str(self.ntry),
@@ -945,7 +1075,7 @@ eof
             lowsites=str(self.lowsites),
             highsites=str(self.highsites),
         )
-        
+
         self.html_topten = """
         <p><span style="font-family:courier new,courier,monospace;"><span style="font-size:18px;"><strong><u>Here are the top 10 hits:</u></strong></span></span></p>
 
