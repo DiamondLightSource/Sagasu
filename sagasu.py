@@ -26,9 +26,14 @@ if pro_or_ana == "p":
     projname, fa_path, highres, lowres, highsites, lowsites, ntry = run.get_input()
     run.writepickle()
     if os.path.exists(os.path.join(path, "inps.pkl")):
-        run.readpickle()
-        run.prasa_prep()
-        run.shelxd_prep()
+        with Halo(
+            text="\nPrepping Jobs",
+            text_color="green",
+            spinner="pipe",
+        ):
+            run.readpickle()
+            run.prasa_prep()
+            run.shelxd_prep()
         with Halo(
             text="\nSubmitting jobs", text_color="green", spinner="monkey",
         ):
@@ -54,12 +59,16 @@ if pro_or_ana == "a" or "p":
         ):
             pool.starmap(run.results, to_run)
             #pool.starmap(run.prasa_results, to_run_prasa)
-        run.prasa_results_concurrent()
+        #run.prasa_results_concurrent()
         ccoutliers_torun = run.run_sagasu_analysis()
         with Halo(text="\nLooking for outliers", text_color="green", spinner="toggle"):
             pool.starmap(run.ccalloutliers, ccoutliers_torun)
             pool.starmap(run.ccweakoutliers, ccoutliers_torun)
             pool.starmap(run.CFOM_PATFOM_analysis, ccoutliers_torun)
+            #to_run_emma = run.get_filenames_for_emma()
+            #emma_results = pool.starmap(run.run_emma, to_run_emma) # uncomment for local
+            #run.run_emma_cluster(to_run_emma) # uncomment for cluster
+            #run.emma_correlation_plot(emma_results) # uncomment for local
             run.vectoroutliers()
             run.tophits()
         with Halo(
@@ -67,7 +76,7 @@ if pro_or_ana == "a" or "p":
         ):
             to_run_ML = run.for_ML_analysis()
             pool.starmap(run.plot_for_ML, to_run_ML)
-        run.writehtml()
+            run.writehtml()
         print("\nRun 'firefox sagasu.html' to view results")
     else:
         print("No previous run found!")

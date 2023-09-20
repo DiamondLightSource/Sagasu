@@ -59,6 +59,34 @@ class core:
             self.ntry,
         )
 
+    def drmaa2template_emma(self, emma1, emma2):
+        emma_jt = JobTemplate(
+            {
+                "job_name": "emma",
+                "job_category": "i23_chris",
+                "remote_command": "/dls/science/groups/i23/scripts/chris/Sagasu/emma.sh",
+                "args": [f"--symmetry={str(self.path)}/aimless.mtz", {str(emma1)}, {str(emma2)}],
+                "min_slots": 1,
+                "max_slots": 1,
+                "working_directory": str(self.path),
+                "output_path": str(self.path),
+                "error_path": str(self.path),
+                "queue_name": "low.q",
+                "implementation_specific": {
+                    "uge_jt_pe": "smp",
+                },
+            }
+        )
+        return emma_jt
+
+    def run_emma_cluster(self, parallel_filelist):
+        self.session = JobSession()
+        self.job_details = []
+        for emma1, emma2 in parallel_filelist:
+            template = self.drmaa2template_emma(emma1, emma2)
+            job = self.session.run_job(template)
+            self.job_details.append([job])
+
     def drmaa2template_shelxd(self, workpath):
         shelxd_jt = JobTemplate(
             {
@@ -160,7 +188,6 @@ class core:
                 self.unitcell,
                 self.spacegroup,
             ) = pickle.load(f)
-
 
     def replace(self, file, pattern, subst):
         file_handle = open(file, "r")
@@ -1033,7 +1060,6 @@ eof
             index="filename_1", columns="filename_2", values="percentage"
         )
         df_pivot2.fillna(0, inplace=True)
-
 
         fig = px.imshow(
             df_pivot1,
