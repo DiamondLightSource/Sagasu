@@ -1126,9 +1126,9 @@ eof
             CFOM_tophits=str(self.top_CFOMhtml),
         )
 
-        with open("sagasu.html", "w") as htmlfile:
+        with open(f"{self.projname}_sagasu.html", "w") as htmlfile:
             htmlfile.write(self.html_init + "\n")
-        with open("sagasu.html", "a") as htmlfile:
+        with open(f"{self.projname}_sagasu.html", "a") as htmlfile:
             htmlfile.write(self.html_topten + "\n")
             htmlfile.write(self.emmain + "\n")
             for line in self.emma.splitlines():
