@@ -10,5 +10,6 @@ dependencies = [
     "numpy>=2.2.3",
     "paramiko>=3.5.1",
     "plotly>=6.0.0",
+    "ruff>=0.9.7",
     "seaborn>=0.13.2",
 ]
